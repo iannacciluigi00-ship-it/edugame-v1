@@ -398,15 +398,85 @@ html,body{width:100%;min-height:100vh;background:#03010a;display:flex;justify-co
   gap:8px;opacity:0;pointer-events:none;
   transition:opacity 0.5s;
 }
-.cin-chapter.show{opacity:1;}
+.cin-chapter.show{opacity:1;}.cin-chapter.active{opacity:1;}
 .cin-chapter-label{font-family:'Cinzel',serif;font-size:11px;color:#4a3a6a;letter-spacing:4px;}
 .cin-chapter-title{font-family:'Cinzel',serif;font-size:28px;color:#c4a96e;letter-spacing:4px;text-shadow:0 0 30px rgba(196,169,110,0.4);}
 .cin-chapter-sub{font-size:14px;color:#5a4a7a;font-style:italic;margin-top:4px;}
+
+
+/* ══ DUNGEON SELECT ══ */
+#dungeonSelect{
+  position:absolute;inset:0;z-index:300;
+  background:radial-gradient(ellipse at center,#0d0520 0%,#03010a 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:24px;padding:30px;
+}
+.ds-logo{font-family:'Cinzel',serif;font-size:32px;color:#9d7fd4;letter-spacing:6px;text-align:center;text-shadow:0 0 40px rgba(120,80,220,0.6);}
+.ds-sub{font-size:13px;color:#4a3a6a;letter-spacing:3px;font-style:italic;}
+.ds-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:560px;}
+.ds-card{background:rgba(10,5,22,0.9);border-radius:14px;padding:20px;cursor:pointer;transition:all 0.3s;text-align:center;position:relative;overflow:hidden;}
+.ds-card.available{border:1px solid rgba(80,40,140,0.4);}
+.ds-card.available:hover{border-color:#9d7fd4;transform:translateY(-4px);box-shadow:0 8px 30px rgba(80,40,160,0.3);}
+.ds-card.locked{border:1px solid rgba(40,20,60,0.3);opacity:0.5;cursor:not-allowed;}
+.ds-card-num{font-family:'Cinzel',serif;font-size:10px;color:#4a3a6a;letter-spacing:3px;margin-bottom:8px;}
+.ds-card-icon{font-size:36px;margin-bottom:10px;}
+.ds-card-name{font-family:'Cinzel',serif;font-size:16px;color:#c4a96e;letter-spacing:2px;margin-bottom:6px;}
+.ds-card-topic{font-size:13px;color:#5a4a7a;font-style:italic;margin-bottom:10px;}
+.ds-card-tag{display:inline-block;border-radius:20px;padding:3px 12px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;}
+.ds-card-tag.ready{background:rgba(77,171,134,0.15);border:1px solid rgba(77,171,134,0.3);color:#4dab86;}
+.ds-card-tag.soon{background:rgba(40,20,60,0.5);border:1px solid rgba(80,40,140,0.2);color:#3a2a5a;}
+.ds-card-lock{position:absolute;top:12px;right:12px;font-size:18px;opacity:0.4;}
+.ds-card.available .ds-card-name{color:#c4a96e;}
+.ds-card.locked .ds-card-name{color:#3a2a5a;}
 
 </style>
 </head>
 <body>
 <div class="gw">
+
+<!-- DUNGEON SELECT -->
+<div id="dungeonSelect">
+  <div class="ds-logo">SPELL & SWORD</div>
+  <div class="ds-sub">choose your dungeon</div>
+  <div class="ds-grid">
+
+    <div class="ds-card available" onclick="selectDungeon(1)">
+      <div class="ds-card-num">DUNGEON I</div>
+      <div class="ds-card-icon">🏰</div>
+      <div class="ds-card-name">The Frozen Citadel</div>
+      <div class="ds-card-topic">English Verb Tenses</div>
+      <div class="ds-card-tag ready">▶ PLAY NOW</div>
+    </div>
+
+    <div class="ds-card locked">
+      <div class="ds-card-lock">🔒</div>
+      <div class="ds-card-num">DUNGEON II</div>
+      <div class="ds-card-icon">🌲</div>
+      <div class="ds-card-name">The Forest of Forgotten Words</div>
+      <div class="ds-card-topic">Colours · Clothing · Vocabulary</div>
+      <div class="ds-card-tag soon">COMING SOON</div>
+    </div>
+
+    <div class="ds-card locked">
+      <div class="ds-card-lock">🔒</div>
+      <div class="ds-card-num">DUNGEON III</div>
+      <div class="ds-card-icon">🌋</div>
+      <div class="ds-card-name">The Volcano of Lost Time</div>
+      <div class="ds-card-topic">Past Perfect · Conditionals</div>
+      <div class="ds-card-tag soon">COMING SOON</div>
+    </div>
+
+    <div class="ds-card locked">
+      <div class="ds-card-lock">🔒</div>
+      <div class="ds-card-num">DUNGEON IV</div>
+      <div class="ds-card-icon">⚡</div>
+      <div class="ds-card-name">The Storm Tower</div>
+      <div class="ds-card-topic">Advanced Grammar · Debate</div>
+      <div class="ds-card-tag soon">COMING SOON</div>
+    </div>
+
+  </div>
+</div>
 
   <!-- INTRO -->
   <div id="introScreen">
@@ -1209,8 +1279,7 @@ function runCinematic(){
   }, 2500);
 }
 
-// Run cinematic on load
-window.addEventListener('DOMContentLoaded', runCinematic);
+// Cinematic triggered by dungeon select
 
 
 /* ══ SOUND ENGINE ══ */
@@ -1431,6 +1500,19 @@ function playBubblePop(){
   gain.gain.exponentialRampToValueAtTime(0.001, t+0.1);
   osc.connect(gain); gain.connect(ctx.destination);
   osc.start(t); osc.stop(t+0.12);
+}
+
+
+/* ══ DUNGEON SELECT ══ */
+function selectDungeon(num){
+  if(num !== 1) return; // only dungeon 1 available
+  const ds = document.getElementById('dungeonSelect');
+  ds.style.opacity='0';
+  ds.style.transition='opacity 0.6s ease';
+  setTimeout(()=>{
+    ds.style.display='none';
+    runCinematic();
+  }, 600);
 }
 
 window.addEventListener('resize',resizeCanvas);
