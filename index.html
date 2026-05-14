@@ -429,6 +429,115 @@ html,body{width:100%;min-height:100vh;background:#03010a;display:flex;justify-co
 .ds-card.available .ds-card-name{color:#c4a96e;}
 .ds-card.locked .ds-card-name{color:#3a2a5a;}
 
+/* ══════════════════════════════════════════════ */
+/* ══ DÉBUT SECTION: GEOMETRY GAME (DUNGEON II) ══ */
+/* ══════════════════════════════════════════════ */
+
+#geometryGame{display:none;position:absolute;inset:0;z-index:350;background:radial-gradient(ellipse at center,#0a0a20 0%,#03010a 100%);flex-direction:column;overflow:hidden;}
+#geometryGame.show{display:flex;}
+
+/* Particules de fond mathématiques */
+.geo-bg-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.geo-symbol{position:absolute;font-family:'Cinzel',serif;font-size:18px;color:rgba(157,127,212,0.08);animation:geoFloat 8s ease-in-out infinite;}
+@keyframes geoFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-30px) rotate(15deg)}}
+
+/* Header du jeu */
+.geo-header{padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(80,40,140,0.2);background:#07040f;z-index:5;}
+.geo-title{font-family:'Cinzel',serif;font-size:14px;color:#c4a96e;letter-spacing:3px;}
+.geo-round-info{font-family:'Cinzel',serif;font-size:11px;color:#9d7fd4;letter-spacing:2px;}
+
+/* HP / Score bar */
+.geo-status{padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px;background:#06030f;border-bottom:1px solid rgba(80,40,140,0.15);}
+.geo-hp-wrap{flex:1;}
+.geo-hp-label{font-family:'Cinzel',serif;font-size:10px;color:#4dab86;letter-spacing:2px;margin-bottom:4px;}
+.geo-hp-track{height:9px;background:rgba(0,0,0,0.7);border-radius:5px;border:1px solid rgba(255,255,255,0.07);overflow:hidden;}
+.geo-hp-fill{height:100%;background:linear-gradient(90deg,#1d5e44,#3d9b76);border-radius:4px;transition:width 0.6s ease;}
+.geo-score{text-align:right;}
+.geo-score-label{font-family:'Cinzel',serif;font-size:10px;color:#c4a96e;letter-spacing:2px;}
+.geo-score-num{font-family:'Cinzel',serif;font-size:22px;color:#c4a96e;text-shadow:0 0 10px rgba(196,169,110,0.4);}
+
+/* Zone du triangle */
+.geo-arena{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;position:relative;overflow:hidden;min-height:0;}
+.geo-instruction{font-size:14px;color:#9d7fd4;text-align:center;margin-bottom:8px;letter-spacing:1px;font-style:italic;}
+.geo-svg-wrap{width:100%;max-width:380px;display:flex;justify-content:center;align-items:center;}
+.geo-svg{width:100%;height:auto;max-height:260px;}
+
+/* Le triangle SVG */
+.triangle-stroke{stroke:#9d7fd4;stroke-width:3;fill:rgba(80,40,140,0.15);filter:drop-shadow(0 0 12px rgba(120,80,200,0.4));}
+.angle-arc{fill:none;stroke:#c4a96e;stroke-width:2;opacity:0.7;}
+.angle-arc.hidden-arc{stroke:#c93030;stroke-width:2.5;}
+.angle-label{font-family:'Cinzel',serif;font-size:16px;fill:#e8dfc8;font-weight:600;}
+.angle-label.hidden-label{fill:#c93030;font-size:22px;font-weight:700;}
+.vertex-dot{fill:#c4a96e;}
+
+/* Timer */
+.geo-timer-wrap{width:100%;max-width:520px;padding:0 20px;margin-bottom:12px;}
+.geo-timer-track{height:6px;background:rgba(0,0,0,0.5);border-radius:3px;overflow:hidden;border:1px solid rgba(80,40,140,0.3);}
+.geo-timer-fill{height:100%;background:linear-gradient(90deg,#4dab86,#c4a96e);transition:width 0.1s linear;width:100%;border-radius:2px;}
+.geo-timer-fill.warning{background:linear-gradient(90deg,#c4a96e,#c93030);}
+.geo-timer-fill.danger{background:linear-gradient(90deg,#c93030,#8b1a1a);animation:dangerPulse 0.4s ease-in-out infinite;}
+@keyframes dangerPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.geo-timer-text{text-align:center;font-family:'Cinzel',serif;font-size:11px;color:#9d7fd4;margin-top:4px;letter-spacing:2px;}
+
+/* Options de réponse */
+.geo-panel{background:#07040f;padding:16px 18px;border-top:1px solid rgba(80,40,140,0.2);}
+.geo-question{font-size:15px;color:#e8dfc8;text-align:center;margin-bottom:12px;}
+.geo-question strong{color:#c4a96e;font-family:'Cinzel',serif;letter-spacing:1px;}
+.geo-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.geo-opt{background:rgba(10,5,22,0.9);border:1px solid rgba(55,28,95,0.4);border-radius:10px;padding:14px 10px;cursor:pointer;font-family:'Cinzel',serif;font-size:20px;color:#e8dfc8;text-align:center;letter-spacing:2px;transition:all 0.2s;}
+.geo-opt:hover{border-color:#7a5ab0;background:rgba(22,10,44,0.95);transform:translateY(-2px);box-shadow:0 6px 20px rgba(80,40,160,0.2);}
+.geo-opt.correct{border-color:#3d8b6e;background:rgba(6,22,14,0.98);color:#5dbb96;pointer-events:none;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);}
+.geo-opt.wrong{border-color:#8b1a1a;background:rgba(18,4,4,0.98);color:#c93030;pointer-events:none;animation:wrongShake 0.4s ease;}
+.geo-opt.reveal{border-color:#3d8b6e;background:rgba(6,22,14,0.6);color:#5dbb96;pointer-events:none;}
+.geo-opt.locked{pointer-events:none;opacity:0.5;}
+
+/* Feedback */
+.geo-fb{margin-top:10px;border-radius:10px;padding:12px 16px;font-size:14px;text-align:center;display:none;line-height:1.5;animation:fadeUp 0.3s ease;}
+.geo-fb.ok{display:block;background:rgba(6,22,14,0.95);border:1px solid #3d8b6e;color:#5dbb96;}
+.geo-fb.bad{display:block;background:rgba(18,4,4,0.95);border:1px solid #6b1a1a;color:#e8dfc8;}
+.geo-fb-formula{font-style:italic;color:#c4a96e;display:block;margin-top:4px;font-size:13px;}
+
+/* Écran d'intro du jeu de géométrie */
+#geoIntro{display:none;position:absolute;inset:0;z-index:360;background:radial-gradient(ellipse at center,#0d0520 0%,#03010a 100%);flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px;}
+#geoIntro.show{display:flex;animation:fadeIn 0.6s ease;}
+.geo-intro-icon{font-size:54px;animation:runeIn 1s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;}
+.geo-intro-title{font-family:'Cinzel',serif;font-size:26px;color:#c4a96e;letter-spacing:5px;text-align:center;text-shadow:0 0 40px rgba(196,169,110,0.5);animation:fadeUp 0.8s ease 0.5s both;}
+.geo-intro-sub{font-size:13px;color:#5a4a7a;letter-spacing:3px;font-style:italic;animation:fadeUp 0.8s ease 0.8s both;text-align:center;}
+.geo-intro-rule{background:rgba(10,5,22,0.95);border:1px solid rgba(196,169,110,0.4);border-radius:14px;padding:20px 24px;max-width:440px;animation:fadeUp 0.8s ease 1.1s both;text-align:center;}
+.geo-intro-rule-label{font-family:'Cinzel',serif;font-size:10px;color:#9d7fd4;letter-spacing:3px;margin-bottom:10px;}
+.geo-intro-rule-text{font-size:18px;color:#e8dfc8;line-height:1.6;}
+.geo-intro-rule-formula{font-family:'Cinzel',serif;font-size:24px;color:#c4a96e;margin-top:10px;letter-spacing:2px;text-shadow:0 0 20px rgba(196,169,110,0.4);}
+.geo-intro-example{font-size:13px;color:#9d7fd4;margin-top:12px;font-style:italic;line-height:1.5;}
+.geo-intro-btn{background:transparent;border:1px solid rgba(196,169,110,0.5);border-radius:12px;padding:14px 44px;cursor:pointer;font-family:'Cinzel',serif;font-size:12px;color:#c4a96e;letter-spacing:4px;transition:all 0.3s;animation:fadeUp 0.8s ease 1.4s both;}
+.geo-intro-btn:hover{border-color:#c4a96e;background:rgba(80,50,10,0.3);box-shadow:0 0 30px rgba(196,169,110,0.3);transform:translateY(-2px);}
+
+/* Écran de fin du jeu */
+#geoEnd{display:none;position:absolute;inset:0;z-index:370;background:radial-gradient(ellipse at center,#0d0520 0%,#03010a 100%);flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;}
+#geoEnd.show{display:flex;animation:fadeIn 0.8s ease;}
+.geo-end-icon{font-size:56px;animation:crownBounce 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;}
+.geo-end-title{font-family:'Cinzel',serif;font-size:26px;color:#c4a96e;letter-spacing:4px;text-align:center;text-shadow:0 0 30px rgba(196,169,110,0.5);}
+.geo-end-sub{font-size:14px;color:#5a4a7a;font-style:italic;letter-spacing:2px;text-align:center;}
+.geo-end-score-box{background:rgba(10,5,22,0.95);border:1px solid rgba(196,169,110,0.4);border-radius:14px;padding:22px 30px;display:flex;gap:30px;margin-top:10px;}
+.geo-end-stat{text-align:center;}
+.geo-end-stat-num{font-family:'Cinzel',serif;font-size:32px;color:#c4a96e;}
+.geo-end-stat-lbl{font-size:11px;color:#5a4a7a;letter-spacing:2px;margin-top:4px;}
+.geo-end-actions{display:flex;gap:12px;margin-top:14px;}
+.geo-end-btn{background:transparent;border:1px solid rgba(157,127,212,0.4);border-radius:10px;padding:11px 26px;cursor:pointer;font-family:'Cinzel',serif;font-size:11px;color:#9d7fd4;letter-spacing:2px;transition:all 0.3s;}
+.geo-end-btn:hover{background:rgba(80,40,160,0.2);border-color:#9d7fd4;transform:translateY(-2px);}
+.geo-end-btn.gold{border-color:#c4a96e;color:#c4a96e;}
+.geo-end-btn.gold:hover{background:rgba(196,169,110,0.1);}
+
+/* Responsive: mobile */
+@media (max-width: 500px){
+  .geo-svg{max-height:200px;}
+  .geo-opt{padding:12px 8px;font-size:18px;}
+  .geo-intro-title{font-size:22px;}
+}
+
+/* ════════════════════════════════════════════ */
+/* ══ FIN SECTION: GEOMETRY GAME (DUNGEON II) ══ */
+/* ════════════════════════════════════════════ */
+
 </style>
 </head>
 <body>
@@ -448,13 +557,12 @@ html,body{width:100%;min-height:100vh;background:#03010a;display:flex;justify-co
       <div class="ds-card-tag ready">▶ PLAY NOW</div>
     </div>
 
-    <div class="ds-card locked">
-      <div class="ds-card-lock">🔒</div>
+    <div class="ds-card available" onclick="selectDungeon(2)">
       <div class="ds-card-num">DUNGEON II</div>
-      <div class="ds-card-icon">🌲</div>
-      <div class="ds-card-name">The Forest of Forgotten Words</div>
-      <div class="ds-card-topic">Colours · Clothing · Vocabulary</div>
-      <div class="ds-card-tag soon">COMING SOON</div>
+      <div class="ds-card-icon">📐</div>
+      <div class="ds-card-name">The Triangle Sanctum</div>
+      <div class="ds-card-topic">Géométrie · La somme des angles</div>
+      <div class="ds-card-tag ready">▶ PLAY NOW</div>
     </div>
 
     <div class="ds-card locked">
@@ -477,6 +585,95 @@ html,body{width:100%;min-height:100vh;background:#03010a;display:flex;justify-co
 
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- ══ DÉBUT SECTION: GEOMETRY GAME HTML (DUNGEON II) ══ -->
+<!-- ══════════════════════════════════════════════ -->
+
+<!-- INTRO DU JEU DE GÉOMÉTRIE -->
+<div id="geoIntro">
+  <div class="geo-intro-icon">📐</div>
+  <div class="geo-intro-title">LE SANCTUAIRE DU TRIANGLE</div>
+  <div class="geo-intro-sub">Dungeon II · Géométrie ancienne</div>
+  <div class="geo-intro-rule">
+    <div class="geo-intro-rule-label">⚜ LA LOI ANCIENNE ⚜</div>
+    <div class="geo-intro-rule-text">
+      Dans tout triangle, la somme des trois angles est toujours égale à :
+    </div>
+    <div class="geo-intro-rule-formula">∠A + ∠B + ∠C = 180°</div>
+    <div class="geo-intro-example">
+      Exemple : si ∠A = 60° et ∠B = 80°, alors ∠C = 180° − 60° − 80° = <strong style="color:#c4a96e;">40°</strong>
+    </div>
+  </div>
+  <button class="geo-intro-btn" onclick="beginGeometryRounds()">⚔ COMMENCER L'ÉPREUVE</button>
+  <button class="geo-end-btn" onclick="returnToDungeonSelect()" style="margin-top:4px;">← retour</button>
+</div>
+
+<!-- JEU DE GÉOMÉTRIE PRINCIPAL -->
+<div id="geometryGame">
+  <div class="geo-bg-particles" id="geoBgParticles"></div>
+
+  <div class="geo-header">
+    <div class="geo-title">📐 THE TRIANGLE SANCTUM</div>
+    <div class="geo-round-info">ROUND <span id="geoRoundNum">1</span> / <span id="geoRoundTotal">7</span></div>
+  </div>
+
+  <div class="geo-status">
+    <div class="geo-hp-wrap">
+      <div class="geo-hp-label">❤ VIE</div>
+      <div class="geo-hp-track"><div class="geo-hp-fill" id="geoHpFill" style="width:100%"></div></div>
+    </div>
+    <div class="geo-score">
+      <div class="geo-score-label">SCORE</div>
+      <div class="geo-score-num" id="geoScore">0</div>
+    </div>
+  </div>
+
+  <div class="geo-arena">
+    <div class="geo-instruction">Trouve l'angle marqué <span style="color:#c93030;font-weight:700;">?</span></div>
+    <div class="geo-svg-wrap" id="geoSvgWrap"></div>
+  </div>
+
+  <div class="geo-timer-wrap">
+    <div class="geo-timer-track"><div class="geo-timer-fill" id="geoTimerFill"></div></div>
+    <div class="geo-timer-text"><span id="geoTimerText">30</span> secondes</div>
+  </div>
+
+  <div class="geo-panel">
+    <div class="geo-question">Quelle est la valeur de l'angle <strong>?</strong></div>
+    <div class="geo-opts" id="geoOpts"></div>
+    <div class="geo-fb" id="geoFb"></div>
+  </div>
+</div>
+
+<!-- ÉCRAN DE FIN -->
+<div id="geoEnd">
+  <div class="geo-end-icon" id="geoEndIcon">👑</div>
+  <div class="geo-end-title" id="geoEndTitle">VICTOIRE</div>
+  <div class="geo-end-sub" id="geoEndSub">Tu as maîtrisé la loi des triangles</div>
+  <div class="geo-end-score-box">
+    <div class="geo-end-stat">
+      <div class="geo-end-stat-num" id="geoFinalScore">0</div>
+      <div class="geo-end-stat-lbl">SCORE</div>
+    </div>
+    <div class="geo-end-stat">
+      <div class="geo-end-stat-num" id="geoFinalCorrect">0/7</div>
+      <div class="geo-end-stat-lbl">RÉUSSIS</div>
+    </div>
+    <div class="geo-end-stat">
+      <div class="geo-end-stat-num" id="geoFinalRank">★</div>
+      <div class="geo-end-stat-lbl">RANG</div>
+    </div>
+  </div>
+  <div class="geo-end-actions">
+    <button class="geo-end-btn gold" onclick="restartGeometryGame()">⟳ REJOUER</button>
+    <button class="geo-end-btn" onclick="returnToDungeonSelect()">← DONJONS</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- ══ FIN SECTION: GEOMETRY GAME HTML (DUNGEON II) ══ -->
+<!-- ════════════════════════════════════════════ -->
 
   <!-- INTRO -->
   <div id="introScreen">
@@ -1505,18 +1702,596 @@ function playBubblePop(){
 
 /* ══ DUNGEON SELECT ══ */
 function selectDungeon(num){
-  if(num !== 1) return; // only dungeon 1 available
+  if(num !== 1 && num !== 2) return; // dungeons 1 et 2 disponibles
   const ds = document.getElementById('dungeonSelect');
   ds.style.opacity='0';
   ds.style.transition='opacity 0.6s ease';
   setTimeout(()=>{
     ds.style.display='none';
-    runCinematic();
+    if(num === 1) runCinematic();
+    else if(num === 2) startGeometryGame();
   }, 600);
 }
 
 window.addEventListener('resize',resizeCanvas);
 resizeCanvas();
+
+/* ══════════════════════════════════════════════════════ */
+/* ══ DÉBUT SECTION: GEOMETRY GAME LOGIC (DUNGEON II) ══ */
+/* ══════════════════════════════════════════════════════ */
+
+// ── ÉTAT DU JEU DE GÉOMÉTRIE ──
+const GEO_TOTAL_ROUNDS = 7;
+let geoRound = 0;
+let geoScore = 0;
+let geoHp = 100;
+let geoCorrectCount = 0;
+let geoTimerInterval = null;
+let geoTimeLeft = 30;
+let geoRoundLocked = false;
+let geoCurrentAngles = null;
+let geoHiddenIdx = 0;
+
+// ── LANCEMENT DU JEU ──
+function startGeometryGame(){
+  // Reset état
+  geoRound = 0;
+  geoScore = 0;
+  geoHp = 100;
+  geoCorrectCount = 0;
+
+  // Afficher écran d'intro
+  document.getElementById('geoIntro').classList.add('show');
+  document.getElementById('geometryGame').classList.remove('show');
+  document.getElementById('geoEnd').classList.remove('show');
+
+  // Ajouter symboles de fond décoratifs
+  spawnGeoBackgroundSymbols();
+}
+
+function spawnGeoBackgroundSymbols(){
+  const bg = document.getElementById('geoBgParticles');
+  bg.innerHTML = '';
+  const symbols = ['△','▽','◇','∠','π','√','∑','◯','◁','▷'];
+  for(let i = 0; i < 15; i++){
+    const el = document.createElement('div');
+    el.className = 'geo-symbol';
+    el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    el.style.left = Math.random() * 100 + '%';
+    el.style.top = Math.random() * 100 + '%';
+    el.style.animationDelay = Math.random() * 8 + 's';
+    el.style.fontSize = (14 + Math.random() * 20) + 'px';
+    bg.appendChild(el);
+  }
+}
+
+// ── DÉMARRER LES ROUNDS ──
+function beginGeometryRounds(){
+  document.getElementById('geoIntro').classList.remove('show');
+  document.getElementById('geometryGame').classList.add('show');
+  geoRound = 0;
+  updateGeoHud();
+  startGeoRound();
+}
+
+// ── HUD UPDATE ──
+function updateGeoHud(){
+  document.getElementById('geoRoundNum').textContent = geoRound + 1;
+  document.getElementById('geoRoundTotal').textContent = GEO_TOTAL_ROUNDS;
+  document.getElementById('geoHpFill').style.width = geoHp + '%';
+  document.getElementById('geoScore').textContent = geoScore;
+}
+
+// ── GÉNÉRATION D'UN TRIANGLE ──
+function generateTriangle(roundIdx){
+  // Difficulté progressive
+  let a, b, c;
+
+  if(roundIdx < 2){
+    // Facile: angles divisibles par 10, nombres ronds
+    const choices = [
+      [60, 60, 60],
+      [90, 45, 45],
+      [90, 60, 30],
+      [70, 70, 40],
+      [80, 50, 50],
+      [100, 40, 40],
+      [120, 30, 30]
+    ];
+    const t = choices[Math.floor(Math.random() * choices.length)];
+    // Mélanger l'ordre
+    [a, b, c] = shuffleArr(t);
+  } else if(roundIdx < 4){
+    // Moyen: angles divisibles par 5
+    a = (Math.floor(Math.random() * 10) + 4) * 5; // 20 à 65
+    b = (Math.floor(Math.random() * 10) + 4) * 5; // 20 à 65
+    c = 180 - a - b;
+    if(c < 20 || c > 130){
+      // Ajuster pour rester raisonnable
+      a = 60; b = 70; c = 50;
+    }
+  } else {
+    // Difficile: nombres quelconques
+    a = Math.floor(Math.random() * 60) + 25; // 25 à 84
+    b = Math.floor(Math.random() * 60) + 25; // 25 à 84
+    c = 180 - a - b;
+    if(c < 15 || c > 130){
+      a = 47; b = 68; c = 65;
+    }
+  }
+
+  // Choisir quel angle cacher
+  const hiddenIdx = Math.floor(Math.random() * 3);
+
+  return { angles: [a, b, c], hidden: hiddenIdx };
+}
+
+function shuffleArr(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ── CALCUL DES SOMMETS D'UN TRIANGLE ──
+// Construit un triangle dont les angles aux 3 sommets correspondent aux valeurs données.
+function computeTriangleVertices(angles, viewWidth, viewHeight){
+  const [A, B, C] = angles;
+  const rA = A * Math.PI / 180;
+  const rB = B * Math.PI / 180;
+  const rC = C * Math.PI / 180;
+
+  // Base AB en bas. Loi des sinus: AC / sin(B) = AB / sin(C)
+  // On choisit AB = 1, puis on calcule AC
+  const AB = 1;
+  const AC = AB * Math.sin(rB) / Math.sin(rC);
+
+  // Sommet A en (0,0), B en (AB, 0), C calculé depuis A à un angle rA
+  let xA = 0, yA = 0;
+  let xB = AB, yB = 0;
+  let xC = AC * Math.cos(rA);
+  let yC = AC * Math.sin(rA);
+
+  // Trouver les bornes pour centrer et adapter à la zone
+  const minX = Math.min(xA, xB, xC);
+  const maxX = Math.max(xA, xB, xC);
+  const minY = Math.min(yA, yB, yC);
+  const maxY = Math.max(yA, yB, yC);
+
+  const w = maxX - minX;
+  const h = maxY - minY;
+
+  // Échelle pour adapter à la zone (avec marge)
+  const margin = 60;
+  const scaleX = (viewWidth - margin * 2) / w;
+  const scaleY = (viewHeight - margin * 2) / h;
+  const scale = Math.min(scaleX, scaleY);
+
+  // Centrer
+  const offsetX = (viewWidth - w * scale) / 2 - minX * scale;
+  const offsetY = (viewHeight - h * scale) / 2 - minY * scale;
+
+  // Convertir (et inverser Y pour SVG)
+  return [
+    { x: xA * scale + offsetX, y: viewHeight - (yA * scale + offsetY) + (offsetY * 2 - viewHeight + h * scale) },
+    { x: xB * scale + offsetX, y: viewHeight - (yB * scale + offsetY) + (offsetY * 2 - viewHeight + h * scale) },
+    { x: xC * scale + offsetX, y: viewHeight - (yC * scale + offsetY) + (offsetY * 2 - viewHeight + h * scale) }
+  ];
+  // Note: les calculs ci-dessus inversent Y. Plus simple ci-dessous:
+}
+
+// Version simplifiée et fiable de calcul des sommets
+function computeTriangleVerticesSimple(angles, W, H){
+  const [A, B, C] = angles;
+  const rA = A * Math.PI / 180;
+  const rB = B * Math.PI / 180;
+  const rC = C * Math.PI / 180;
+
+  // On dessine: A en bas-gauche, B en bas-droite, C en haut
+  // Base AB horizontale, longueur 1
+  // C est à hauteur (sin B) depuis B en direction (180 - angle B)
+  // Plus simple: A=(0,0), B=(1,0), C = ?
+  // Le vecteur AC fait un angle rA avec AB
+  // Longueur AC = sin(B) / sin(C)  (loi des sinus avec AB=1)
+
+  const AC_len = Math.sin(rB) / Math.sin(rC);
+  const ax = 0, ay = 0;
+  const bx = 1, by = 0;
+  const cx = AC_len * Math.cos(rA);
+  const cy = AC_len * Math.sin(rA);
+
+  // Bounding box
+  const minX = Math.min(ax, bx, cx);
+  const maxX = Math.max(ax, bx, cx);
+  const minY = Math.min(ay, by, cy);
+  const maxY = Math.max(ay, by, cy);
+  const bw = maxX - minX;
+  const bh = maxY - minY;
+
+  // Marges pour les labels d'angles
+  const margin = 50;
+  const availW = W - margin * 2;
+  const availH = H - margin * 2;
+  const scale = Math.min(availW / bw, availH / bh);
+
+  // Centrage
+  const totalW = bw * scale;
+  const totalH = bh * scale;
+  const offX = (W - totalW) / 2;
+  const offY = (H - totalH) / 2;
+
+  // Transformer en coordonnées SVG (Y vers le bas, donc on inverse)
+  return [
+    { x: (ax - minX) * scale + offX, y: H - ((ay - minY) * scale + offY) },
+    { x: (bx - minX) * scale + offX, y: H - ((by - minY) * scale + offY) },
+    { x: (cx - minX) * scale + offX, y: H - ((cy - minY) * scale + offY) }
+  ];
+}
+
+// ── RENDU SVG DU TRIANGLE ──
+function renderTriangle(triangleData){
+  const W = 360;
+  const H = 240;
+  const angles = triangleData.angles;
+  const hiddenIdx = triangleData.hidden;
+
+  const verts = computeTriangleVerticesSimple(angles, W, H);
+
+  // Construire les arcs aux sommets (pour visualiser les angles)
+  function arcAtVertex(idx){
+    const v = verts[idx];
+    const next = verts[(idx + 1) % 3];
+    const prev = verts[(idx + 2) % 3];
+
+    // Vecteurs depuis ce sommet vers les deux autres
+    const dx1 = next.x - v.x;
+    const dy1 = next.y - v.y;
+    const dx2 = prev.x - v.x;
+    const dy2 = prev.y - v.y;
+
+    const a1 = Math.atan2(dy1, dx1);
+    const a2 = Math.atan2(dy2, dx2);
+
+    // Calculer l'angle entre les deux directions (toujours le plus petit, c'est-à-dire celui DU triangle)
+    let diff = a2 - a1;
+    while(diff > Math.PI) diff -= 2 * Math.PI;
+    while(diff < -Math.PI) diff += 2 * Math.PI;
+
+    const radius = 22;
+    const sweep = diff > 0 ? 1 : 0;
+    const largeArc = 0;
+
+    const x1 = v.x + Math.cos(a1) * radius;
+    const y1 = v.y + Math.sin(a1) * radius;
+    const x2 = v.x + Math.cos(a2) * radius;
+    const y2 = v.y + Math.sin(a2) * radius;
+
+    // Position du label (à mi-arc, légèrement plus loin)
+    const midAngle = a1 + diff / 2;
+    const labelDist = 42;
+    const lx = v.x + Math.cos(midAngle) * labelDist;
+    const ly = v.y + Math.sin(midAngle) * labelDist;
+
+    return { path: `M ${x1.toFixed(1)} ${y1.toFixed(1)} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${x2.toFixed(1)} ${y2.toFixed(1)}`, lx, ly };
+  }
+
+  const arc0 = arcAtVertex(0);
+  const arc1 = arcAtVertex(1);
+  const arc2 = arcAtVertex(2);
+  const arcs = [arc0, arc1, arc2];
+
+  // Triangle path
+  const trianglePath = `M ${verts[0].x.toFixed(1)} ${verts[0].y.toFixed(1)} L ${verts[1].x.toFixed(1)} ${verts[1].y.toFixed(1)} L ${verts[2].x.toFixed(1)} ${verts[2].y.toFixed(1)} Z`;
+
+  // Build SVG
+  let svg = `<svg class="geo-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<path class="triangle-stroke" d="${trianglePath}" stroke-linejoin="round"/>`;
+
+  // Arcs et labels d'angles
+  for(let i = 0; i < 3; i++){
+    const isHidden = (i === hiddenIdx);
+    svg += `<path class="angle-arc ${isHidden ? 'hidden-arc' : ''}" d="${arcs[i].path}"/>`;
+    const label = isHidden ? '?' : (angles[i] + '°');
+    svg += `<text class="angle-label ${isHidden ? 'hidden-label' : ''}" x="${arcs[i].lx.toFixed(1)}" y="${(arcs[i].ly + 5).toFixed(1)}" text-anchor="middle">${label}</text>`;
+  }
+
+  // Petits points aux sommets
+  for(let i = 0; i < 3; i++){
+    svg += `<circle class="vertex-dot" cx="${verts[i].x.toFixed(1)}" cy="${verts[i].y.toFixed(1)}" r="3"/>`;
+  }
+
+  svg += `</svg>`;
+
+  document.getElementById('geoSvgWrap').innerHTML = svg;
+}
+
+// ── DÉMARRER UN ROUND ──
+function startGeoRound(){
+  geoRoundLocked = false;
+
+  // Générer le triangle
+  geoCurrentAngles = generateTriangle(geoRound);
+  geoHiddenIdx = geoCurrentAngles.hidden;
+  const correctAnswer = geoCurrentAngles.angles[geoHiddenIdx];
+
+  // Render
+  renderTriangle(geoCurrentAngles);
+
+  // Générer les options (1 bonne + 3 distracteurs)
+  const opts = generateOptions(correctAnswer);
+
+  // Afficher les options
+  const optsHtml = opts.map(o => `<button class="geo-opt" onclick="pickGeoAnswer(${o})">${o}°</button>`).join('');
+  document.getElementById('geoOpts').innerHTML = optsHtml;
+
+  // Cacher feedback
+  document.getElementById('geoFb').className = 'geo-fb';
+
+  // Démarrer le timer
+  const timeForRound = getTimeForRound(geoRound);
+  startGeoTimer(timeForRound);
+
+  // Update HUD
+  updateGeoHud();
+}
+
+// Temps selon le round (décroissant)
+function getTimeForRound(idx){
+  if(idx < 2) return 30;
+  if(idx < 4) return 25;
+  if(idx < 6) return 20;
+  return 18;
+}
+
+// Génère 4 options (1 correcte + 3 incorrectes plausibles)
+function generateOptions(correct){
+  const wrongs = new Set();
+  // Distracteurs plausibles
+  const candidates = [
+    correct + 10,
+    correct - 10,
+    correct + 20,
+    correct - 20,
+    180 - correct, // erreur courante (compléter à 180 au lieu de soustraire à 180)
+    180 - correct - geoCurrentAngles.angles[(geoHiddenIdx + 1) % 3] // erreur où on oublie un angle
+  ];
+
+  for(const c of candidates){
+    if(c !== correct && c > 0 && c < 180 && !wrongs.has(c)){
+      wrongs.add(c);
+    }
+    if(wrongs.size >= 3) break;
+  }
+
+  // Compléter si pas assez de distracteurs
+  while(wrongs.size < 3){
+    const r = correct + Math.floor(Math.random() * 40) - 20;
+    if(r !== correct && r > 0 && r < 180 && !wrongs.has(r)) wrongs.add(r);
+  }
+
+  const arr = [correct, ...Array.from(wrongs).slice(0, 3)];
+  return shuffleArr(arr);
+}
+
+// ── TIMER ──
+function startGeoTimer(seconds){
+  geoTimeLeft = seconds;
+  clearInterval(geoTimerInterval);
+  updateTimerVisual(seconds, seconds);
+
+  const startTime = Date.now();
+  const totalMs = seconds * 1000;
+
+  geoTimerInterval = setInterval(() => {
+    if(geoRoundLocked){
+      clearInterval(geoTimerInterval);
+      return;
+    }
+    const elapsed = Date.now() - startTime;
+    const remaining = Math.max(0, totalMs - elapsed);
+    geoTimeLeft = remaining / 1000;
+    updateTimerVisual(geoTimeLeft, seconds);
+    if(remaining <= 0){
+      clearInterval(geoTimerInterval);
+      onGeoTimeOut();
+    }
+  }, 100);
+}
+
+function updateTimerVisual(timeLeft, totalTime){
+  const pct = (timeLeft / totalTime) * 100;
+  const fill = document.getElementById('geoTimerFill');
+  fill.style.width = pct + '%';
+  fill.classList.remove('warning', 'danger');
+  if(pct < 30) fill.classList.add('danger');
+  else if(pct < 60) fill.classList.add('warning');
+  document.getElementById('geoTimerText').textContent = Math.ceil(timeLeft);
+}
+
+// ── TIME OUT ──
+function onGeoTimeOut(){
+  if(geoRoundLocked) return;
+  geoRoundLocked = true;
+  clearInterval(geoTimerInterval);
+
+  const correctAnswer = geoCurrentAngles.angles[geoHiddenIdx];
+
+  // Révéler la bonne réponse
+  document.querySelectorAll('.geo-opt').forEach(b => {
+    b.classList.add('locked');
+    if(parseInt(b.textContent) === correctAnswer) b.classList.add('reveal');
+  });
+
+  // Perdre 25 HP
+  geoHp = Math.max(0, geoHp - 25);
+
+  // Feedback
+  const fb = document.getElementById('geoFb');
+  fb.className = 'geo-fb bad';
+  fb.innerHTML = '⏰ Temps écoulé !'
+    + '<span class="geo-fb-formula">La bonne réponse : <strong>' + correctAnswer + '°</strong> — '
+    + showFormula() + '</span>';
+
+  updateGeoHud();
+  setTimeout(nextGeoRound, 2800);
+}
+
+// ── PICK UNE RÉPONSE ──
+function pickGeoAnswer(value){
+  if(geoRoundLocked) return;
+  geoRoundLocked = true;
+  clearInterval(geoTimerInterval);
+
+  const correctAnswer = geoCurrentAngles.angles[geoHiddenIdx];
+  const isCorrect = (value === correctAnswer);
+
+  // Marquer les boutons
+  document.querySelectorAll('.geo-opt').forEach(b => {
+    b.classList.add('locked');
+    const bVal = parseInt(b.textContent);
+    if(bVal === correctAnswer) b.classList.add(isCorrect && bVal === value ? 'correct' : 'reveal');
+    else if(bVal === value && !isCorrect) b.classList.add('wrong');
+  });
+
+  // Calculer score / dégâts
+  const fb = document.getElementById('geoFb');
+  if(isCorrect){
+    // Bonus en fonction du temps restant
+    const timeBonus = Math.round(geoTimeLeft * 5);
+    const basePoints = 100;
+    geoScore += basePoints + timeBonus;
+    geoCorrectCount++;
+    fb.className = 'geo-fb ok';
+    fb.innerHTML = '✓ Excellent ! +' + (basePoints + timeBonus) + ' points'
+      + '<span class="geo-fb-formula">' + showFormula() + '</span>';
+    playGeoSuccess();
+  } else {
+    geoHp = Math.max(0, geoHp - 25);
+    fb.className = 'geo-fb bad';
+    fb.innerHTML = '✗ Faux. La réponse était <strong>' + correctAnswer + '°</strong>'
+      + '<span class="geo-fb-formula">' + showFormula() + '</span>';
+    playGeoFail();
+  }
+
+  updateGeoHud();
+  setTimeout(nextGeoRound, 2800);
+}
+
+// Affiche la formule explicative
+function showFormula(){
+  const a = geoCurrentAngles.angles;
+  const h = geoHiddenIdx;
+  const others = [];
+  for(let i = 0; i < 3; i++) if(i !== h) others.push(a[i]);
+  return '180° − ' + others[0] + '° − ' + others[1] + '° = ' + a[h] + '°';
+}
+
+// ── PASSAGE AU PROCHAIN ROUND ──
+function nextGeoRound(){
+  // Si HP à 0, défaite
+  if(geoHp <= 0){
+    endGeometryGame(false);
+    return;
+  }
+
+  geoRound++;
+  if(geoRound >= GEO_TOTAL_ROUNDS){
+    endGeometryGame(true);
+    return;
+  }
+
+  startGeoRound();
+}
+
+// ── ÉCRAN DE FIN ──
+function endGeometryGame(victoire){
+  document.getElementById('geometryGame').classList.remove('show');
+  const end = document.getElementById('geoEnd');
+  end.classList.add('show');
+
+  // Rang basé sur le score
+  let rank, rankColor;
+  const maxScore = GEO_TOTAL_ROUNDS * 250;
+  const pct = geoScore / maxScore;
+  if(pct >= 0.85){ rank = '★★★'; rankColor = '#c4a96e'; }
+  else if(pct >= 0.6){ rank = '★★'; rankColor = '#9d7fd4'; }
+  else if(pct >= 0.3){ rank = '★'; rankColor = '#5a4a7a'; }
+  else { rank = '—'; rankColor = '#3a2a5a'; }
+
+  if(victoire){
+    document.getElementById('geoEndIcon').textContent = '👑';
+    document.getElementById('geoEndTitle').textContent = 'VICTOIRE';
+    document.getElementById('geoEndSub').textContent = 'Tu as maîtrisé la loi des triangles';
+  } else {
+    document.getElementById('geoEndIcon').textContent = '💀';
+    document.getElementById('geoEndTitle').textContent = 'DÉFAITE';
+    document.getElementById('geoEndSub').textContent = 'Le sanctuaire t\'a englouti... réessaie !';
+  }
+
+  document.getElementById('geoFinalScore').textContent = geoScore;
+  document.getElementById('geoFinalCorrect').textContent = geoCorrectCount + '/' + GEO_TOTAL_ROUNDS;
+  const rankEl = document.getElementById('geoFinalRank');
+  rankEl.textContent = rank;
+  rankEl.style.color = rankColor;
+}
+
+// ── REJOUER ──
+function restartGeometryGame(){
+  document.getElementById('geoEnd').classList.remove('show');
+  startGeometryGame();
+}
+
+// ── RETOUR AU MENU ──
+function returnToDungeonSelect(){
+  clearInterval(geoTimerInterval);
+  document.getElementById('geoIntro').classList.remove('show');
+  document.getElementById('geometryGame').classList.remove('show');
+  document.getElementById('geoEnd').classList.remove('show');
+  const ds = document.getElementById('dungeonSelect');
+  ds.style.display = 'flex';
+  ds.style.opacity = '1';
+}
+
+// ── SONS (réutilise getAudio() du jeu existant) ──
+function playGeoSuccess(){
+  try {
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    [523, 659, 784].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const start = t + i * 0.08;
+      gain.gain.setValueAtTime(0.1, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(start); osc.stop(start + 0.5);
+    });
+  } catch(e){ /* audio peut être bloqué */ }
+}
+
+function playGeoFail(){
+  try {
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, t);
+    osc.frequency.exponentialRampToValueAtTime(80, t + 0.4);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.5);
+  } catch(e){ /* audio peut être bloqué */ }
+}
+
+/* ════════════════════════════════════════════════════ */
+/* ══ FIN SECTION: GEOMETRY GAME LOGIC (DUNGEON II) ══ */
+/* ════════════════════════════════════════════════════ */
 </script>
 
 <!-- TEACHER TAB BUTTON -->
