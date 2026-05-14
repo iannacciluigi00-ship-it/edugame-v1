@@ -429,6 +429,184 @@ html,body{width:100%;min-height:100vh;background:#03010a;display:flex;justify-co
 .ds-card.available .ds-card-name{color:#c4a96e;}
 .ds-card.locked .ds-card-name{color:#3a2a5a;}
 
+/* ════════════════════════════════════════════════ */
+/* ══ DÉBUT SECTION: PLAYER STATS SYSTEM (XP+COMBO) ══ */
+/* ════════════════════════════════════════════════ */
+
+/* Barre joueur en haut */
+.player-bar{
+  position:absolute;top:0;left:0;right:0;
+  z-index:380;
+  background:linear-gradient(180deg,rgba(20,8,40,0.97),rgba(10,5,22,0.92));
+  border-bottom:1px solid rgba(120,80,200,0.3);
+  padding:8px 14px;
+  display:flex;align-items:center;gap:10px;
+  height:52px;box-sizing:border-box;
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+}
+.player-bar.hidden{display:none;}
+
+.pb-level{
+  background:linear-gradient(135deg,#2a0a4a,#5a2a9a);
+  border:1px solid #9d7fd4;
+  border-radius:8px;
+  padding:5px 10px;
+  font-family:'Cinzel',serif;
+  font-size:10px;color:#c4a96e;
+  letter-spacing:2px;white-space:nowrap;
+  box-shadow:0 0 12px rgba(120,80,200,0.3);
+  display:flex;align-items:center;gap:6px;
+}
+.pb-level-num{
+  color:#fff;font-size:15px;font-weight:700;
+  text-shadow:0 0 8px rgba(196,169,110,0.6);
+}
+
+.pb-xp-wrap{flex:1;min-width:0;}
+.pb-xp-label{
+  display:flex;justify-content:space-between;
+  font-size:9px;color:#7a5ab0;letter-spacing:1.5px;margin-bottom:3px;
+  font-family:'Cinzel',serif;
+}
+.pb-xp-track{
+  height:7px;
+  background:rgba(0,0,0,0.6);
+  border-radius:4px;
+  border:1px solid rgba(120,80,200,0.2);
+  overflow:hidden;position:relative;
+}
+.pb-xp-fill{
+  height:100%;
+  background:linear-gradient(90deg,#5a2a9a,#9d7fd4,#c4a96e);
+  border-radius:3px;
+  transition:width 0.6s ease;
+  position:relative;
+}
+.pb-xp-fill::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent);
+  animation:xpShine 2.5s linear infinite;
+}
+@keyframes xpShine{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* Combo dans la barre */
+.pb-combo{
+  border-radius:8px;
+  padding:5px 10px;
+  font-family:'Cinzel',serif;
+  font-size:11px;
+  letter-spacing:1px;white-space:nowrap;
+  display:none;align-items:center;gap:6px;
+  transition:all 0.2s ease;
+}
+.pb-combo.show{display:flex;animation:comboPopIn 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes comboPopIn{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+.pb-combo.tier0{
+  background:linear-gradient(135deg,rgba(80,30,30,0.9),rgba(120,40,40,0.9));
+  border:1px solid #c46a40;color:#ff9050;
+}
+.pb-combo.tier1{
+  background:linear-gradient(135deg,rgba(120,50,20,0.9),rgba(160,80,30,0.9));
+  border:1px solid #ff9050;color:#ffb070;
+  box-shadow:0 0 10px rgba(255,144,80,0.3);
+}
+.pb-combo.tier2{
+  background:linear-gradient(135deg,rgba(80,50,10,0.9),rgba(140,90,20,0.9));
+  border:1px solid #c4a96e;color:#ffd070;
+  box-shadow:0 0 14px rgba(196,169,110,0.5);
+}
+.pb-combo.tier3{
+  background:linear-gradient(135deg,rgba(60,10,80,0.9),rgba(110,40,150,0.9));
+  border:1px solid #c080ff;color:#e0a0ff;
+  box-shadow:0 0 18px rgba(180,100,255,0.6);
+  animation:comboGlow 0.7s ease-in-out infinite alternate;
+}
+@keyframes comboGlow{
+  from{box-shadow:0 0 14px rgba(180,100,255,0.4)}
+  to{box-shadow:0 0 24px rgba(180,100,255,0.9)}
+}
+.pb-combo-num{font-size:14px;font-weight:700;}
+
+/* Flash de combo (gros texte plein écran) */
+#comboFlash{
+  position:fixed;top:30%;left:50%;
+  transform:translate(-50%,-50%) scale(0.5);
+  font-family:'Cinzel',serif;
+  font-size:38px;letter-spacing:5px;font-weight:700;
+  color:#fff;text-shadow:0 0 30px currentColor,0 0 60px currentColor;
+  pointer-events:none;opacity:0;z-index:9000;
+  text-align:center;white-space:nowrap;
+}
+#comboFlash.show{animation:comboFlashAnim 1.6s ease-out forwards;}
+#comboFlash.tier1{color:#ffb070;}
+#comboFlash.tier2{color:#ffd070;}
+#comboFlash.tier3{color:#e0a0ff;}
+@keyframes comboFlashAnim{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0.3) rotate(-8deg)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.25) rotate(3deg)}
+  32%{transform:translate(-50%,-50%) scale(1) rotate(0)}
+  80%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(0.95) translateY(-20px)}
+}
+
+/* Notification Level Up */
+#levelUpFlash{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  background:linear-gradient(135deg,rgba(80,50,10,0.98),rgba(140,90,20,0.98));
+  border:2px solid #c4a96e;
+  border-radius:18px;
+  padding:24px 44px;
+  text-align:center;
+  pointer-events:none;opacity:0;z-index:9001;
+  box-shadow:0 0 80px rgba(196,169,110,0.7);
+}
+#levelUpFlash.show{animation:levelUpAnim 2.6s ease-out forwards;}
+.lu-label{font-family:'Cinzel',serif;font-size:12px;color:#c4a96e;letter-spacing:6px;margin-bottom:8px;}
+.lu-text{font-family:'Cinzel',serif;font-size:24px;color:#fff;letter-spacing:3px;text-shadow:0 0 20px #c4a96e;}
+.lu-level-num{
+  color:#fff;font-size:48px;display:block;margin-top:6px;
+  text-shadow:0 0 30px #ffd070,0 0 50px #c4a96e;
+  animation:luPulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes luPulse{from{transform:scale(1)}to{transform:scale(1.08)}}
+@keyframes levelUpAnim{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0.4) rotate(-5deg)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.18) rotate(2deg)}
+  28%{transform:translate(-50%,-50%) scale(1) rotate(0)}
+  85%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}
+}
+
+/* Flotteurs d'XP */
+.xp-floater{
+  position:fixed;
+  font-family:'Cinzel',serif;
+  font-size:16px;font-weight:700;
+  color:#c4a96e;
+  text-shadow:0 0 10px rgba(196,169,110,0.8),0 0 20px rgba(196,169,110,0.4);
+  pointer-events:none;z-index:8999;
+  letter-spacing:1px;
+  animation:xpFloat 1.6s ease-out forwards;
+}
+@keyframes xpFloat{
+  0%{opacity:0;transform:translate(-50%,0) scale(0.7)}
+  15%{opacity:1;transform:translate(-50%,-12px) scale(1.15)}
+  30%{transform:translate(-50%,-25px) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-80px) scale(1)}
+}
+
+/* Décaler la HUD du donjon 1 pour faire de la place à la barre joueur */
+.arena .hud{top:52px !important;}
+
+/* Décaler le contenu du donjon 2 pour faire de la place à la barre joueur */
+#geometryGame{padding-top:52px;}
+
+/* ══════════════════════════════════════════════ */
+/* ══ FIN SECTION: PLAYER STATS SYSTEM ══ */
+/* ══════════════════════════════════════════════ */
+
 /* ══════════════════════════════════════════════ */
 /* ══ DÉBUT SECTION: GEOMETRY GAME (DUNGEON II) ══ */
 /* ══════════════════════════════════════════════ */
@@ -542,6 +720,43 @@ html,body{width:100%;min-height:100vh;background:#03010a;display:flex;justify-co
 </head>
 <body>
 <div class="gw">
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- ══ DÉBUT SECTION: PLAYER STATS BAR HTML ══ -->
+<!-- ══════════════════════════════════════════════ -->
+
+<!-- Barre joueur en haut (toujours visible sauf cinématique) -->
+<div class="player-bar" id="playerBar">
+  <div class="pb-level">
+    LVL <span class="pb-level-num" id="pbLevelNum">1</span>
+  </div>
+  <div class="pb-xp-wrap">
+    <div class="pb-xp-label">
+      <span>EXPERIENCE</span>
+      <span><span id="pbXpCurrent">0</span> / <span id="pbXpMax">100</span></span>
+    </div>
+    <div class="pb-xp-track">
+      <div class="pb-xp-fill" id="pbXpFill" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="pb-combo" id="pbCombo">
+    <span>🔥</span>
+    <span class="pb-combo-num" id="pbComboNum">x0</span>
+  </div>
+</div>
+
+<!-- Flash de combo (notification grand format) -->
+<div id="comboFlash"></div>
+
+<!-- Notification level up -->
+<div id="levelUpFlash">
+  <div class="lu-label">★ LEVEL UP ★</div>
+  <div class="lu-text">NIVEAU<span class="lu-level-num" id="luLevelNum">2</span></div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- ══ FIN SECTION: PLAYER STATS BAR HTML ══ -->
+<!-- ══════════════════════════════════════════════ -->
 
 <!-- DUNGEON SELECT -->
 <div id="dungeonSelect">
@@ -978,6 +1193,10 @@ function animChar(id, anim, duration=600){
 
 /* ── GAME FLOW ── */
 function startGame(){
+  // ── XP & COMBO ──
+  resetCombo();
+  showPlayerBar();
+
   const s=document.getElementById('introScreen');
   s.style.opacity='0';s.style.transition='opacity 0.8s';
   setTimeout(()=>s.style.display='none',800);
@@ -1056,6 +1275,8 @@ function resolve(ok,ch){
   const fb=document.getElementById('fb');
   triggerFX(ok);
   if(ok){
+    // ── XP & COMBO (système partagé) ──
+    onCorrectAnswer(40); // 40 XP base par bonne réponse + bonus combo
     enemyHp=Math.max(0,enemyHp-ch.dmg);
     flashScreen('rgba(77,171,134,0.35)');
     playSpellCast();
@@ -1067,6 +1288,8 @@ function resolve(ok,ch){
     fb.className='fb ok';
     fb.innerHTML='✓ Correct! &nbsp;<span class="cf">'+ch.hint+'</span>';
   } else {
+    // ── COMBO BREAK ──
+    onWrongAnswer();
     heroHp=Math.max(0,heroHp-20);
     flashScreen('rgba(180,30,30,0.45)');
     playFizzle();
@@ -1418,6 +1641,9 @@ function spawnRuneParticles(){
 }
 
 function runCinematic(){
+  // ── Cacher la barre joueur durant la cinématique ──
+  hidePlayerBar();
+
   spawnRuneParticles();
   
   // Set lesson topic
@@ -1717,6 +1943,210 @@ window.addEventListener('resize',resizeCanvas);
 resizeCanvas();
 
 /* ══════════════════════════════════════════════════════ */
+/* ══ DÉBUT SECTION: PLAYER STATS LOGIC (XP+COMBO+LVL) ══ */
+/* ══════════════════════════════════════════════════════ */
+
+// ── PERSISTANCE (localStorage) ──
+const PLAYER_STORAGE_KEY = 'spellSword_player_v1';
+
+function loadPlayer(){
+  try {
+    const stored = localStorage.getItem(PLAYER_STORAGE_KEY);
+    if(stored) return JSON.parse(stored);
+  } catch(e){}
+  return { level: 1, xp: 0 };
+}
+
+function savePlayer(){
+  try {
+    localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify(player));
+  } catch(e){}
+}
+
+let player = loadPlayer();
+let combo = 0;
+
+// XP nécessaire pour passer du niveau L au niveau L+1
+function xpForNextLevel(level){
+  return level * 100; // L1→L2: 100, L2→L3: 200, L3→L4: 300, etc.
+}
+
+// ── MISE À JOUR DE LA BARRE ──
+function updatePlayerBar(){
+  const lvlEl = document.getElementById('pbLevelNum');
+  const curEl = document.getElementById('pbXpCurrent');
+  const maxEl = document.getElementById('pbXpMax');
+  const fillEl = document.getElementById('pbXpFill');
+  if(!lvlEl || !fillEl) return;
+
+  lvlEl.textContent = player.level;
+  const xpNeeded = xpForNextLevel(player.level);
+  curEl.textContent = player.xp;
+  maxEl.textContent = xpNeeded;
+  const pct = Math.min(100, (player.xp / xpNeeded) * 100);
+  fillEl.style.width = pct + '%';
+  updateComboDisplay();
+}
+
+function updateComboDisplay(){
+  const el = document.getElementById('pbCombo');
+  const numEl = document.getElementById('pbComboNum');
+  if(!el || !numEl) return;
+  if(combo >= 2){
+    el.classList.add('show');
+    numEl.textContent = 'x' + combo;
+    el.classList.remove('tier0','tier1','tier2','tier3');
+    if(combo >= 10) el.classList.add('tier3');
+    else if(combo >= 5) el.classList.add('tier2');
+    else if(combo >= 3) el.classList.add('tier1');
+    else el.classList.add('tier0');
+  } else {
+    el.classList.remove('show','tier0','tier1','tier2','tier3');
+  }
+}
+
+// ── AJOUT D'XP ──
+function addXp(amount, sourceX, sourceY){
+  player.xp += amount;
+
+  // Floater visuel
+  if(sourceX !== undefined && sourceY !== undefined){
+    showXpFloater(amount, sourceX, sourceY);
+  }
+
+  // Vérifier level up (peut potentiellement gagner plusieurs niveaux d'un coup)
+  let leveledUp = false;
+  while(player.xp >= xpForNextLevel(player.level)){
+    player.xp -= xpForNextLevel(player.level);
+    player.level++;
+    leveledUp = true;
+  }
+  if(leveledUp){
+    // Petit délai pour que le floater apparaisse avant le level up
+    setTimeout(showLevelUp, 600);
+  }
+
+  savePlayer();
+  updatePlayerBar();
+}
+
+function showXpFloater(amount, x, y){
+  const el = document.createElement('div');
+  el.className = 'xp-floater';
+  el.textContent = '+' + amount + ' XP';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => { if(el.parentNode) el.remove(); }, 1700);
+}
+
+function showLevelUp(){
+  const el = document.getElementById('levelUpFlash');
+  document.getElementById('luLevelNum').textContent = player.level;
+  el.classList.remove('show');
+  void el.offsetWidth; // forcer reflow pour relancer l'anim
+  el.classList.add('show');
+  playLevelUpSound();
+  setTimeout(() => el.classList.remove('show'), 2700);
+}
+
+// ── GESTION COMBO ──
+function onCorrectAnswer(baseXp){
+  combo++;
+  const xpEarned = baseXp + (combo * 5);
+
+  // Position du floater (haut centre de l'écran)
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 3;
+  addXp(xpEarned, cx, cy);
+
+  // Flash combo aux paliers
+  if(combo === 3) showComboFlash('COMBO ARCANIQUE x3', 'tier1');
+  else if(combo === 5) showComboFlash('FURY SPELL x5', 'tier2');
+  else if(combo === 10) showComboFlash('LEGENDARY MIND x10', 'tier3');
+  else if(combo === 15) showComboFlash('DIVINE COMBO x15', 'tier3');
+  else if(combo > 15 && combo % 5 === 0) showComboFlash('GODLIKE x' + combo, 'tier3');
+
+  updateComboDisplay();
+  return xpEarned;
+}
+
+function onWrongAnswer(){
+  combo = 0;
+  updateComboDisplay();
+}
+
+function resetCombo(){
+  combo = 0;
+  updateComboDisplay();
+}
+
+function showComboFlash(text, tier){
+  const el = document.getElementById('comboFlash');
+  el.textContent = text;
+  el.className = '';
+  void el.offsetWidth;
+  el.classList.add('show', tier);
+  playComboSound(tier);
+  setTimeout(() => el.classList.remove('show'), 1700);
+}
+
+// ── AFFICHER/CACHER BARRE ──
+function hidePlayerBar(){
+  const b = document.getElementById('playerBar');
+  if(b) b.classList.add('hidden');
+}
+function showPlayerBar(){
+  const b = document.getElementById('playerBar');
+  if(b) b.classList.remove('hidden');
+}
+
+// ── SONS ──
+function playLevelUpSound(){
+  try {
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    [523, 659, 784, 1046, 1318].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const start = t + i * 0.09;
+      gain.gain.setValueAtTime(0.13, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.6);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(start); osc.stop(start + 0.7);
+    });
+  } catch(e){}
+}
+
+function playComboSound(tier){
+  try {
+    const ctx = getAudio();
+    const t = ctx.currentTime;
+    const baseFreq = tier === 'tier3' ? 880 : (tier === 'tier2' ? 700 : 550);
+    for(let i = 0; i < 3; i++){
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.value = baseFreq * (1 + i * 0.2);
+      const start = t + i * 0.05;
+      gain.gain.setValueAtTime(0.08, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(start); osc.stop(start + 0.35);
+    }
+  } catch(e){}
+}
+
+// ── INITIALISATION ──
+updatePlayerBar();
+
+/* ════════════════════════════════════════════════════ */
+/* ══ FIN SECTION: PLAYER STATS LOGIC ══ */
+/* ════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════ */
 /* ══ DÉBUT SECTION: GEOMETRY GAME LOGIC (DUNGEON II) ══ */
 /* ══════════════════════════════════════════════════════ */
 
@@ -1734,6 +2164,9 @@ let geoHiddenIdx = 0;
 
 // ── LANCEMENT DU JEU ──
 function startGeometryGame(){
+  // ── Afficher la barre joueur ──
+  showPlayerBar();
+
   // Reset état
   geoRound = 0;
   geoScore = 0;
@@ -1767,6 +2200,10 @@ function spawnGeoBackgroundSymbols(){
 
 // ── DÉMARRER LES ROUNDS ──
 function beginGeometryRounds(){
+  // ── XP & COMBO ──
+  resetCombo();
+  showPlayerBar();
+
   document.getElementById('geoIntro').classList.remove('show');
   document.getElementById('geometryGame').classList.add('show');
   geoRound = 0;
@@ -2116,6 +2553,9 @@ function onGeoTimeOut(){
   geoRoundLocked = true;
   clearInterval(geoTimerInterval);
 
+  // ── COMBO BREAK ──
+  onWrongAnswer();
+
   const correctAnswer = geoCurrentAngles.angles[geoHiddenIdx];
 
   // Révéler la bonne réponse
@@ -2158,16 +2598,22 @@ function pickGeoAnswer(value){
   // Calculer score / dégâts
   const fb = document.getElementById('geoFb');
   if(isCorrect){
-    // Bonus en fonction du temps restant
-    const timeBonus = Math.round(geoTimeLeft * 5);
+    // ── XP & COMBO (système partagé) ──
+    const timeBonus = Math.round(geoTimeLeft);
+    onCorrectAnswer(30 + timeBonus); // 30 base + bonus temps + combo
+
+    // Score interne du jeu (différent de l'XP global)
     const basePoints = 100;
-    geoScore += basePoints + timeBonus;
+    const scoreTimeBonus = Math.round(geoTimeLeft * 5);
+    geoScore += basePoints + scoreTimeBonus;
     geoCorrectCount++;
     fb.className = 'geo-fb ok';
-    fb.innerHTML = '✓ Excellent ! +' + (basePoints + timeBonus) + ' points'
+    fb.innerHTML = '✓ Excellent ! +' + (basePoints + scoreTimeBonus) + ' points'
       + '<span class="geo-fb-formula">' + showFormula() + '</span>';
     playGeoSuccess();
   } else {
+    // ── COMBO BREAK ──
+    onWrongAnswer();
     geoHp = Math.max(0, geoHp - 25);
     fb.className = 'geo-fb bad';
     fb.innerHTML = '✗ Faux. La réponse était <strong>' + correctAnswer + '°</strong>'
