@@ -832,12 +832,16 @@ canvas{display:block;outline:none;}
       <span class="control-key">SOURIS</span>
     </div>
     <div class="control-row">
+      <span>Barrel roll gauche / droite</span>
+      <span><span class="control-key">Q</span><span class="control-key">E</span></span>
+    </div>
+    <div class="control-row">
       <span>Tirer (armes requises)</span>
       <span class="control-key">CLIC GAUCHE</span>
     </div>
     <div class="control-row">
       <span>Atterrir (près planète)</span>
-      <span class="control-key">E</span>
+      <span class="control-key">F</span>
     </div>
     <div class="control-row">
       <span>Changer vue (cockpit / externe)</span>
@@ -874,8 +878,8 @@ canvas{display:block;outline:none;}
   </div>
 
   <div class="hud-corner hud-bl">
-    <div>W/A/S/D = mouvement &nbsp; SPACE = haut &nbsp; SHIFT = bas</div>
-    <div>CTRL = boost &nbsp; CLIC GAUCHE = tir 🔥 &nbsp; E = atterrir &nbsp; V = vue</div>
+    <div>W/A/S/D = mouvement &nbsp; SPACE/SHIFT = haut/bas &nbsp; Q/E = barrel roll</div>
+    <div>CTRL = boost &nbsp; CLIC GAUCHE = tir 🔥 &nbsp; F = atterrir &nbsp; V = vue</div>
   </div>
 </div>
 
@@ -902,12 +906,9 @@ canvas{display:block;outline:none;}
   <div class="bw-sub">Armes requises pour traverser</div>
 </div>
 
-<!-- Cockpit overlay (visible en vue 1ère personne pendant le jeu) -->
+<!-- Cockpit overlay : juste une vignette douce aux coins (le vrai cockpit est en 3D) -->
 <div id="cockpitOverlay">
-  <div class="cockpit-pillar left"></div>
-  <div class="cockpit-pillar right"></div>
   <div class="cockpit-vignette"></div>
-  <div class="cockpit-dashboard"></div>
 </div>
 
 <!-- Indicateur de vue (bottom-right) -->
@@ -1061,6 +1062,7 @@ const MOON_SIZE = 0.8;
 const MOVE_SPEED = 40;      // unités par seconde (vitesse de base)
 const BOOST_MULT = 3.5;     // multiplicateur quand CTRL est maintenu
 const MOUSE_SENS = 0.0022;  // sensibilité souris
+const ROLL_SPEED = 3;       // radians par seconde (barrel roll avec Q/E)
 
 /* ===== FIN SECTION: DONNÉES DES PLANÈTES ===== */
 
@@ -1304,7 +1306,7 @@ function createShipMesh(){
   tail.position.set(0, 0.4, 1.0);
   group.add(tail);
 
-  // Dôme cockpit (vitre)
+  // Dôme cockpit (vitre - visible de l'extérieur)
   const cockpitGeo = new THREE.SphereGeometry(0.35, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
   const cockpitMat = new THREE.MeshStandardMaterial({
     color: SHIP_ACCENT,
@@ -1340,6 +1342,99 @@ function createShipMesh(){
   return group;
 }
 
+// Crée le cockpit intérieur 3D (visible seulement en vue cockpit)
+// Le cockpit est enfant du ship, donc il rotate avec le vaisseau (incluant le barrel roll)
+function createCockpitInterior(){
+  const group = new THREE.Group();
+
+  // Matériau du châssis (métal sombre)
+  const frameMat = new THREE.MeshStandardMaterial({
+    color: 0x223344,
+    emissive: 0x0a1218,
+    roughness: 0.7,
+    metalness: 0.6,
+    flatShading: true
+  });
+
+  // ─── MONTANTS DE VITRE (gauche + droit) ───
+  const pillarGeo = new THREE.BoxGeometry(0.06, 0.85, 0.08);
+
+  const pillarL = new THREE.Mesh(pillarGeo, frameMat);
+  pillarL.position.set(-0.55, 0, -0.85);
+  pillarL.rotation.z = 0.2; // léger angle inward au sommet
+  group.add(pillarL);
+
+  const pillarR = new THREE.Mesh(pillarGeo, frameMat);
+  pillarR.position.set(0.55, 0, -0.85);
+  pillarR.rotation.z = -0.2;
+  group.add(pillarR);
+
+  // Traverse supérieure (haut de la vitre)
+  const topBrace = new THREE.Mesh(
+    new THREE.BoxGeometry(1.1, 0.05, 0.08),
+    frameMat
+  );
+  topBrace.position.set(0, 0.42, -0.85);
+  group.add(topBrace);
+
+  // ─── TABLEAU DE BORD ───
+  // Une plaque inclinée vers le pilote au bas de l'écran
+  const dashGeo = new THREE.BoxGeometry(1.3, 0.05, 0.55);
+  const dashMat = new THREE.MeshStandardMaterial({
+    color: 0x152030,
+    emissive: 0x0a1218,
+    roughness: 0.85,
+    metalness: 0.4
+  });
+  const dashboard = new THREE.Mesh(dashGeo, dashMat);
+  dashboard.position.set(0, -0.45, -0.55);
+  dashboard.rotation.x = -0.45; // inclinée vers le pilote
+  group.add(dashboard);
+
+  // ─── ÉCRANS / INSTRUMENTS LUMINEUX ───
+  // 3 écrans glow embedded dans le dashboard
+  const screenColors = [0x4dc4ff, 0x5dbb96, 0xffaa66];
+  const screenLabels = ['NAV', 'SYS', 'WPN'];
+  for(let i = 0; i < 3; i++){
+    // Le rectangle lumineux du screen
+    const screenGeo = new THREE.PlaneGeometry(0.2, 0.1);
+    const screenMat = new THREE.MeshBasicMaterial({
+      color: screenColors[i],
+      transparent: true,
+      opacity: 0.7
+    });
+    const screen = new THREE.Mesh(screenGeo, screenMat);
+    // Position : sur le dashboard incliné
+    screen.position.set(-0.4 + i * 0.4, -0.32, -0.42);
+    screen.rotation.x = -0.45; // match dashboard tilt
+    group.add(screen);
+  }
+
+  // ─── PETITES LUMIÈRES SUR LE CADRE (status LEDs) ───
+  const ledMat = new THREE.MeshBasicMaterial({color: 0x4dc4ff});
+  const ledPositions = [
+    {x: -0.5, y: 0.38, z: -0.85},
+    {x: 0.5,  y: 0.38, z: -0.85},
+    {x: -0.5, y: -0.15, z: -0.85},
+    {x: 0.5,  y: -0.15, z: -0.85}
+  ];
+  ledPositions.forEach(p => {
+    const led = new THREE.Mesh(
+      new THREE.SphereGeometry(0.022, 6, 6),
+      ledMat
+    );
+    led.position.set(p.x, p.y, p.z);
+    group.add(led);
+  });
+
+  // Lumière d'ambiance dans le cockpit (subtile)
+  const cockpitLight = new THREE.PointLight(0x4dc4ff, 0.15, 3);
+  cockpitLight.position.set(0, 0, -0.5);
+  group.add(cockpitLight);
+
+  return group;
+}
+
 // ── CRÉATION DU VAISSEAU + REPARENTAGE DE LA CAMÉRA ──
 // Le ship est un Group dans la scène. Le mesh visible est un enfant.
 // La caméra devient enfant du ship pour suivre automatiquement.
@@ -1351,6 +1446,11 @@ const shipMesh = createShipMesh();
 ship.add(shipMesh);
 shipMesh.visible = false; // caché par défaut (vue cockpit = on est dedans)
 
+// Cockpit intérieur 3D (visible en vue cockpit, rotate avec le vaisseau)
+const cockpitInterior = createCockpitInterior();
+ship.add(cockpitInterior);
+cockpitInterior.visible = true; // visible par défaut (on commence en cockpit)
+
 // Position de départ : près de la Terre, regardant vers le soleil
 ship.position.set(
   earthData.group.position.x * 0.55,
@@ -1359,13 +1459,13 @@ ship.position.set(
 );
 
 // Orientation initiale : regarder vers le soleil (origine)
-let yaw = 0, pitch = 0;
+let yaw = 0, pitch = 0, roll = 0;
 {
   const dir = new THREE.Vector3().subVectors(new THREE.Vector3(0,0,0), ship.position).normalize();
   yaw = Math.atan2(-dir.x, -dir.z);
   pitch = Math.asin(dir.y);
 }
-ship.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+ship.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, roll, 'YXZ'));
 
 // Reparenter la caméra au ship (était un objet libre)
 ship.add(camera);
@@ -1382,14 +1482,16 @@ function setView(mode){
   viewMode = mode;
   if(mode === 'cockpit'){
     camera.position.set(0, 0, 0);  // caméra à l'intérieur du ship
-    shipMesh.visible = false;       // on cache le ship (on est dedans)
+    shipMesh.visible = false;       // on cache le ship extérieur (on est dedans)
+    cockpitInterior.visible = true; // on montre le cockpit 3D
     if(started && !landed){
       document.getElementById('cockpitOverlay').classList.add('show');
     }
     document.getElementById('vmValue').textContent = 'COCKPIT';
   } else {
     camera.position.copy(EXTERNAL_VIEW_OFFSET); // caméra derrière/au-dessus
-    shipMesh.visible = true;                     // ship visible
+    shipMesh.visible = true;                     // ship extérieur visible
+    cockpitInterior.visible = false;             // on cache l'intérieur
     document.getElementById('cockpitOverlay').classList.remove('show');
     document.getElementById('vmValue').textContent = 'EXTERNE';
   }
@@ -1673,7 +1775,7 @@ document.addEventListener('mousemove', (e) => {
 const keys = {};
 document.addEventListener('keydown', (e) => {
   keys[e.code] = true;
-  if(e.code === 'KeyE') handleLand();
+  if(e.code === 'KeyF') handleLand();
   if(e.code === 'KeyV') toggleView();
 });
 document.addEventListener('keyup', (e) => {
@@ -1996,13 +2098,17 @@ function animate(){
 
   // ──── MOUVEMENT DU JOUEUR ────
   if(started && !landed){
-    // Update rotation du ship depuis yaw/pitch
-    ship.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+    // ── ROLL (Q/E pour barrel roll) ──
+    if(keys['KeyQ']) roll += ROLL_SPEED * dt;
+    if(keys['KeyE']) roll -= ROLL_SPEED * dt;
 
-    // Vecteurs directionnels (basés sur l'orientation du ship)
+    // Update rotation du ship depuis yaw/pitch/roll
+    ship.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, roll, 'YXZ'));
+
+    // Vecteurs directionnels (basés sur l'orientation du ship - locaux au vaisseau)
     const forward = new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion);
     const right   = new THREE.Vector3(1,0,0).applyQuaternion(ship.quaternion);
-    const worldUp = new THREE.Vector3(0,1,0);
+    const localUp = new THREE.Vector3(0,1,0).applyQuaternion(ship.quaternion); // haut local (suit le roll)
 
     // Construire le vecteur de mouvement selon les touches
     const move = new THREE.Vector3();
@@ -2010,8 +2116,8 @@ function animate(){
     if(keys['KeyS'])                                 move.sub(forward);
     if(keys['KeyA'])                                 move.sub(right);
     if(keys['KeyD'])                                 move.add(right);
-    if(keys['Space'])                                move.add(worldUp);
-    if(keys['ShiftLeft'] || keys['ShiftRight'])      move.sub(worldUp);
+    if(keys['Space'])                                move.add(localUp);
+    if(keys['ShiftLeft'] || keys['ShiftRight'])      move.sub(localUp);
 
     if(move.length() > 0){
       move.normalize();
