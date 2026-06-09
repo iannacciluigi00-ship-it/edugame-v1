@@ -603,6 +603,35 @@ canvas{display:block;outline:none;}
   display:flex;gap:12px;margin-top:18px;
 }
 
+/* ====== JUPITER GAME (chimie) ====== */
+#jupiterGame{ position:fixed; inset:0; background:radial-gradient(ellipse at center, rgba(120,80,40,0.92), rgba(30,15,5,0.98) 70%, #000); display:none; flex-direction:column; z-index:600; color:#ffe6c8; font-family:'Courier New',monospace; }
+#jupiterGame.active{ display:flex; }
+.jup-screen{ position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+.jup-screen.show{ display:flex; animation:fadeIn 0.5s ease; }
+.jup-icon{ font-size:60px; margin-bottom:8px; }
+.jup-title{ font-size:40px; color:#ffb050; letter-spacing:8px; text-shadow:0 0 30px rgba(255,150,50,0.7); text-align:center; }
+.jup-sub{ font-size:12px; color:#e0b080; letter-spacing:4px; font-style:italic; margin-bottom:22px; text-transform:uppercase; text-align:center; }
+.jup-rule{ background:rgba(50,28,12,0.9); border:1px solid rgba(255,160,80,0.45); border-radius:14px; padding:20px 28px; max-width:480px; text-align:center; margin-bottom:22px; }
+.jup-rule-label{ font-size:10px; color:#ffb050; letter-spacing:4px; margin-bottom:10px; }
+.jup-rule-text{ font-size:15px; line-height:1.6; }
+.jup-rule-ex{ font-size:12px; color:#e0b080; margin-top:12px; }
+.jup-btn{ background:transparent; border:1px solid #ffb050; border-radius:30px; padding:12px 32px; color:#ffb050; font-family:monospace; font-size:12px; letter-spacing:3px; cursor:pointer; margin:4px; transition:all 0.3s; }
+.jup-btn:hover{ background:rgba(255,176,80,0.15); box-shadow:0 0 22px rgba(255,176,80,0.4); }
+.jup-btn.primary{ border-color:#ffcf80; color:#ffcf80; font-weight:bold; }
+.jup-header{ position:absolute; top:0; left:0; right:0; padding:12px 20px; display:flex; justify-content:space-between; background:rgba(30,15,5,0.7); border-bottom:1px solid rgba(255,160,80,0.25); }
+.jup-h-title{ font-size:13px; color:#ffb050; letter-spacing:3px; }
+.jup-h-info{ font-size:12px; color:#ffcf80; letter-spacing:2px; }
+#jupCanvas{ margin-top:50px; border:1px solid rgba(255,160,80,0.3); border-radius:8px; background:#1a0f06; max-width:96vw; }
+.jup-bottom{ position:absolute; bottom:0; left:0; right:0; padding:14px 20px; background:rgba(30,15,5,0.85); border-top:1px solid rgba(255,160,80,0.25); }
+.jup-inv{ display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
+.jup-slot{ width:58px; height:58px; border:2px solid rgba(255,160,80,0.5); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold; color:#fff; background:rgba(50,28,12,0.8); }
+.jup-plus{ font-size:24px; color:#ffb050; }
+.jup-combine{ background:rgba(255,176,80,0.15); border:1px solid #ffcf80; border-radius:10px; padding:14px 22px; color:#ffcf80; font-family:monospace; font-size:13px; letter-spacing:2px; cursor:pointer; font-weight:bold; }
+.jup-combine:hover{ background:rgba(255,176,80,0.3); }
+.jup-fb{ text-align:center; font-size:14px; margin-top:10px; min-height:20px; }
+.jup-fb.ok{ color:#7CFC9a; } .jup-fb.bad{ color:#ff8877; }
+.jup-end-actions{ display:flex; gap:12px; margin-top:18px; }
+
 /* ===== FIN SECTION: MARS GAME ===== */
 
 
@@ -707,8 +736,12 @@ canvas{display:block;outline:none;}
   pointer-events:none;
   z-index:50;
   display:none;
+  background:url('cockpit2.jpg') center center / 100% 100% no-repeat;
+  /* L'image = lignes cyan sur fond noir → "screen" rend le noir transparent (on voit l'espace) */
+  mix-blend-mode:screen;
 }
 #cockpitOverlay.show{display:block;}
+#cockpitOverlay > div{ display:none; } /* on remplace les pièces CSS par l'image du cockpit */
 
 /* Vignette aux coins (effet "à travers la vitre du cockpit") */
 .cockpit-vignette{
@@ -784,6 +817,43 @@ canvas{display:block;outline:none;}
 .vm-value{font-size:13px;color:#4dc4ff;font-weight:bold;}
 .vm-hint{font-size:9px;color:#5a8aaa;margin-top:3px;font-style:italic;}
 
+/* Minimap / alerte ennemi / cadrans cockpit / lock missile */
+#minimap{ position:fixed; right:18px; top:150px; width:150px; height:150px; border:1px solid rgba(77,196,255,0.4); border-radius:50%; background:rgba(5,10,20,0.55); z-index:120; }
+#enemyAlert{ position:fixed; top:92px; left:50%; transform:translateX(-50%); background:rgba(80,15,10,0.82); border:1px solid #ff4444; color:#ff8877; padding:7px 18px; border-radius:6px; font-size:13px; letter-spacing:2px; z-index:130; display:none; }
+#enemyAlert.show{ display:block; animation:dangerPulse 0.8s ease-in-out infinite; }
+#cockpitGauges{ position:fixed; inset:0; display:none; z-index:120; pointer-events:none; }
+#cockpitGauges.show{ display:block; }
+#cockpitGauges > svg, #cockpitGauges > .cg{ position:absolute; }
+/* Caler les cadrans dans les anneaux vides du cockpit — % ajustables à l'œil */
+#cockpitGauges > svg:nth-of-type(1){ left:32%; bottom:20%; transform:translate(-50%,50%); } /* VITESSE → anneau gauche */
+#cockpitGauges > svg:nth-of-type(2){ left:68%; bottom:20%; transform:translate(-50%,50%); } /* BOUCLIER → anneau droit */
+#cockpitGauges > .cg:nth-of-type(1){ left:44%;   bottom:19%; transform:translate(-50%,50%); text-align:center; } /* CIBLE → cercle gauche-centre */
+#cockpitGauges > .cg:nth-of-type(2){ left:50%;   bottom:19%; transform:translate(-50%,50%); text-align:center; } /* ENNEMIS → cercle milieu */
+#cockpitGauges > .cg:nth-of-type(3){ left:56.5%; bottom:19%; transform:translate(-50%,50%); text-align:center; } /* MISSILE → cercle droit-centre */
+.dial{ width:92px; height:92px; }
+.dial-ring{ fill:rgba(8,20,40,0.6); stroke:rgba(77,196,255,0.45); stroke-width:2; }
+.dial-hub{ fill:#4dc4ff; }
+.needle{ stroke:#4dc4ff; stroke-width:3; stroke-linecap:round; }
+.dial-val{ fill:#fff; font-size:13px; text-anchor:middle; font-family:'Courier New',monospace; font-weight:bold; }
+.dial-lbl{ fill:#6a9ac0; font-size:7px; text-anchor:middle; letter-spacing:1px; }
+.cg{ text-align:center; }
+.cg-l{ font-size:9px; color:#5a8aaa; letter-spacing:2px; }
+.cg-v{ font-size:20px; color:#4dc4ff; font-weight:bold; text-shadow:0 0 10px rgba(77,196,255,0.7); }
+#lockIndicator{ position:fixed; top:56%; left:50%; transform:translateX(-50%); color:#ffaa33; font-size:12px; letter-spacing:3px; z-index:130; display:none; text-shadow:0 0 8px rgba(255,170,50,0.8); }
+#lockIndicator.show{ display:block; }
+#lockIndicator.locked{ color:#ff4444; text-shadow:0 0 8px rgba(255,68,68,0.9); }
+#weaponInd{ position:fixed; bottom:100px; left:50%; transform:translateX(-50%); color:#4dc4ff; font-size:12px; letter-spacing:2px; z-index:120; text-shadow:0 0 8px rgba(77,196,255,0.7); }
+#flightModeInd{ position:fixed; bottom:124px; left:50%; transform:translateX(-50%); color:#4dc4ff; font-size:13px; font-weight:bold; letter-spacing:3px; z-index:120; text-shadow:0 0 10px rgba(77,196,255,0.85); font-family:'Courier New',monospace; display:none; transition:color 0.2s; }
+#flightModeInd.show{ display:block; }
+#flightModeInd.fight{ color:#ff6644; text-shadow:0 0 10px rgba(255,100,60,0.9); }
+#flightModeInd .fmi-key{ font-size:10px; opacity:0.6; font-weight:normal; }
+#flightModeInd.pulse{ animation:fmiPulse 0.4s ease; }
+@keyframes fmiPulse{ 0%{transform:translateX(-50%) scale(1);} 50%{transform:translateX(-50%) scale(1.25);} 100%{transform:translateX(-50%) scale(1);} }
+.enemy-marker{ position:fixed; width:40px; height:40px; margin-left:-20px; margin-top:-20px; border:2px solid #ff4444; border-radius:5px; box-shadow:0 0 8px rgba(255,68,68,0.7); z-index:115; pointer-events:none; display:none; }
+.enemy-marker.locked{ border-color:#ffcc33; width:52px; height:52px; margin-left:-26px; margin-top:-26px; box-shadow:0 0 14px rgba(255,200,50,0.9); }
+.reticle.locked::before,.reticle.locked::after{ background:rgba(255,68,68,0.9); }
+.reticle.locked .reticle-dot{ background:#ff4444; }
+
 /* ===== FIN SECTION: COCKPIT OVERLAY + VIEW TOGGLE ===== */
 </style>
 </head>
@@ -832,12 +902,28 @@ canvas{display:block;outline:none;}
       <span class="control-key">SOURIS</span>
     </div>
     <div class="control-row">
-      <span>Barrel roll gauche / droite</span>
+      <span>Tirer (armes requises)</span>
+      <span class="control-key">CLIC GAUCHE</span>
+    </div>
+    <div class="control-row">
+      <span>Zoom (viser / locker)</span>
+      <span class="control-key">CLIC DROIT</span>
+    </div>
+    <div class="control-row">
+      <span>Arme : laser / missile / rafale</span>
+      <span><span class="control-key">1</span><span class="control-key">2</span><span class="control-key">3</span></span>
+    </div>
+    <div class="control-row">
+      <span>Barrel roll</span>
       <span><span class="control-key">Q</span><span class="control-key">E</span></span>
     </div>
     <div class="control-row">
-      <span>Tirer (armes requises)</span>
-      <span class="control-key">CLIC GAUCHE</span>
+      <span>Changer de vaisseau</span>
+      <span class="control-key">B</span>
+    </div>
+    <div class="control-row">
+      <span>Mode vol : croisière ⇄ combat</span>
+      <span class="control-key">X</span>
     </div>
     <div class="control-row">
       <span>Atterrir (près planète)</span>
@@ -866,6 +952,10 @@ canvas{display:block;outline:none;}
     <div class="hud-value" id="hudPos">0, 0, 0</div>
     <div class="hud-label" style="margin-top:6px;">VITESSE</div>
     <div class="hud-value big" id="hudSpeed">0 u/s</div>
+    <div class="hud-label" style="margin-top:8px;">BOUCLIER</div>
+    <div style="height:8px;width:180px;background:rgba(0,0,0,0.5);border:1px solid rgba(77,196,255,0.3);border-radius:4px;overflow:hidden;margin-top:3px;">
+      <div id="hudShieldFill" style="height:100%;width:100%;background:linear-gradient(90deg,#2aa86a,#4dc4ff);transition:width 0.2s;"></div>
+    </div>
   </div>
 
   <div class="hud-corner hud-tr">
@@ -878,8 +968,9 @@ canvas{display:block;outline:none;}
   </div>
 
   <div class="hud-corner hud-bl">
-    <div>W/A/S/D = mouvement &nbsp; SPACE/SHIFT = haut/bas &nbsp; Q/E = barrel roll</div>
-    <div>CTRL = boost &nbsp; CLIC GAUCHE = tir 🔥 &nbsp; F = atterrir &nbsp; V = vue</div>
+    <div>W/A/S/D = mouvement &nbsp; SPACE = haut &nbsp; SHIFT = bas</div>
+    <div>CTRL = boost &nbsp; CLIC GAUCHE = tir &nbsp; CLIC DROIT = zoom 🔭 &nbsp; 1·2·3 = arme</div>
+    <div>Q/E = roll &nbsp; F = atterrir &nbsp; V = vue &nbsp; B = vaisseau &nbsp; X = mode vol</div>
   </div>
 </div>
 
@@ -892,7 +983,7 @@ canvas{display:block;outline:none;}
 <div id="planetInfo">
   <div class="pi-name" id="piName">EARTH</div>
   <div class="pi-subject" id="piSubject">Geography & History</div>
-  <div class="pi-prompt">Appuie sur <span class="pi-key">E</span> pour atterrir</div>
+  <div class="pi-prompt">Appuie sur <span class="pi-key">F</span> pour atterrir</div>
 </div>
 
 <!-- Prompt quand la souris n'est pas verrouillée -->
@@ -906,9 +997,12 @@ canvas{display:block;outline:none;}
   <div class="bw-sub">Armes requises pour traverser</div>
 </div>
 
-<!-- Cockpit overlay : juste une vignette douce aux coins (le vrai cockpit est en 3D) -->
+<!-- Cockpit overlay (visible en vue 1ère personne pendant le jeu) -->
 <div id="cockpitOverlay">
+  <div class="cockpit-pillar left"></div>
+  <div class="cockpit-pillar right"></div>
   <div class="cockpit-vignette"></div>
+  <div class="cockpit-dashboard"></div>
 </div>
 
 <!-- Indicateur de vue (bottom-right) -->
@@ -916,6 +1010,32 @@ canvas{display:block;outline:none;}
   <div class="vm-label">VUE</div>
   <div class="vm-value" id="vmValue">COCKPIT</div>
   <div class="vm-hint">V pour changer</div>
+</div>
+
+<!-- Minimap, alerte ennemi, lock missile, cadrans cockpit -->
+<canvas id="minimap" width="150" height="150"></canvas>
+<div id="enemyAlert">⚠ ENNEMI EN VUE</div>
+<div id="lockIndicator">ACQUISITION…</div>
+<div id="weaponInd">ARME : LASER</div>
+<div id="flightModeInd">✦ MODE CROISIÈRE <span class="fmi-key">[X]</span></div>
+<div id="cockpitGauges">
+  <svg class="dial" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="46" class="dial-ring"/>
+    <line x1="50" y1="50" x2="50" y2="11" class="needle" id="needleSpeed" transform="rotate(-120 50 50)"/>
+    <circle cx="50" cy="50" r="4" class="dial-hub"/>
+    <text x="50" y="73" class="dial-val" id="dialSpeed">0</text>
+    <text x="50" y="90" class="dial-lbl">VITESSE</text>
+  </svg>
+  <svg class="dial" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="46" class="dial-ring"/>
+    <line x1="50" y1="50" x2="50" y2="11" class="needle" id="needleShield" transform="rotate(120 50 50)"/>
+    <circle cx="50" cy="50" r="4" class="dial-hub"/>
+    <text x="50" y="73" class="dial-val" id="dialShield">100</text>
+    <text x="50" y="90" class="dial-lbl">BOUCLIER</text>
+  </svg>
+  <div class="cg"><div class="cg-l">CIBLE</div><div class="cg-v" id="cgTarget">—</div></div>
+  <div class="cg"><div class="cg-l">ENNEMIS</div><div class="cg-v" id="cgEnemies">0</div></div>
+  <div class="cg"><div class="cg-l">MISSILE</div><div class="cg-v" id="cgLock">—</div></div>
 </div>
 
 <!-- Écran d'atterrissage -->
@@ -1029,6 +1149,51 @@ canvas{display:block;outline:none;}
   </div>
 </div>
 
+<!-- ===== JUPITER GAME HTML ===== -->
+<div id="jupiterGame">
+  <div class="jup-screen show" id="jupIntro">
+    <div class="jup-icon">♃</div>
+    <div class="jup-title">JUPITER</div>
+    <div class="jup-sub">Laboratoire de chimie · Sciences</div>
+    <div class="jup-rule">
+      <div class="jup-rule-label">⚗ MISSION</div>
+      <div class="jup-rule-text">Promène-toi, ramasse des <strong>éléments</strong>, pis combine-en deux pour créer des <strong>molécules</strong>!</div>
+      <div class="jup-rule-ex">Ex : <strong>H + O → H₂O</strong> (l'eau) · <strong>Na + Cl → NaCl</strong> (le sel)</div>
+    </div>
+    <button class="jup-btn primary" onclick="jupiterBegin()">▶ ENTRER DANS LE LABO</button>
+    <button class="jup-btn" onclick="jupiterExit()">← retour au vaisseau</button>
+  </div>
+
+  <div class="jup-screen" id="jupPlay" style="padding:0;">
+    <div class="jup-header">
+      <div class="jup-h-title">♃ LABO JUPITER</div>
+      <div class="jup-h-info">DÉCOUVERTES <span id="jupCount">0</span>/<span id="jupGoal">6</span> &nbsp; SCORE <span id="jupScore">0</span></div>
+    </div>
+    <canvas id="jupCanvas" width="760" height="420"></canvas>
+    <div class="jup-bottom">
+      <div class="jup-inv">
+        <div class="jup-slot" id="jupSlot0">—</div>
+        <div class="jup-plus">+</div>
+        <div class="jup-slot" id="jupSlot1">—</div>
+        <button class="jup-combine" onclick="jupiterCombine()">COMBINER (Espace)</button>
+      </div>
+      <div class="jup-fb" id="jupFb">Flèches / WASD pour bouger · marche sur un élément pour le ramasser</div>
+    </div>
+  </div>
+
+  <div class="jup-screen" id="jupEnd">
+    <div class="jup-icon">🏆</div>
+    <div class="jup-title">LABO MAÎTRISÉ</div>
+    <div class="jup-sub" id="jupEndSub">Belles découvertes!</div>
+    <div class="jup-rule" id="jupDiscList" style="text-align:left;"></div>
+    <div class="jup-end-actions">
+      <button class="jup-btn primary" onclick="jupiterRestart()">⟳ REJOUER</button>
+      <button class="jup-btn" onclick="jupiterExit()">← VAISSEAU</button>
+    </div>
+  </div>
+</div>
+<!-- ===== FIN JUPITER GAME HTML ===== -->
+
 <!-- ===== FIN SECTION: MARS GAME HTML ===== -->
 
 <!-- ===== FIN SECTION: HTML STRUCTURE ===== -->
@@ -1036,6 +1201,15 @@ canvas{display:block;outline:none;}
 
 <!-- Three.js chargé depuis un CDN (version classique avec tag balise) -->
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.137.0/examples/js/loaders/GLTFLoader.js"></script>
+<!-- Post-processing : bloom (lueur) + correction des couleurs -->
+<script src="https://unpkg.com/three@0.137.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://unpkg.com/three@0.137.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://unpkg.com/three@0.137.0/examples/js/shaders/GammaCorrectionShader.js"></script>
+<script src="https://unpkg.com/three@0.137.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.137.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.137.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://unpkg.com/three@0.137.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 
 <script>
 /* ====================================================== */
@@ -1044,25 +1218,32 @@ canvas{display:block;outline:none;}
 
 // Chaque planète a : nom, matière (sujet d'étude), couleur, taille, distance du soleil, angle de départ, icône
 const PLANETS = [
-  {name:'MERCURY',  subject:'Vitesse & Physique',         color:0xaa9988, size:1.5, distance:30,  angle:0.3, icon:'☿'},
-  {name:'VENUS',    subject:'Chimie & Environnement',     color:0xddaa66, size:2.5, distance:50,  angle:1.2, icon:'♀'},
-  {name:'EARTH',    subject:'Géographie & Histoire',      color:0x3377cc, size:3,   distance:80,  angle:2.4, icon:'🌍'},
-  {name:'MARS',     subject:'Mathématiques',              color:0xcc4422, size:2,   distance:110, angle:0.8, icon:'♂'},
-  {name:'JUPITER',  subject:'Logique & Énigmes',          color:0xccaa66, size:10,  distance:175, angle:3.5, icon:'♃'},
-  {name:'SATURN',   subject:'Astronomie',                 color:0xeeccaa, size:8,   distance:240, angle:4.8, icon:'♄', rings:true},
-  {name:'URANUS',   subject:'Code & Séquences',           color:0x99ddee, size:5,   distance:310, angle:5.7, icon:'♅'},
-  {name:'NEPTUNE',  subject:'Code & Séquences',           color:0x3355cc, size:5,   distance:380, angle:0.9, icon:'♆'},
+  {name:'MERCURY', subject:'Vitesse & Physique',     color:0xaa9988, diam:0.38, au:0.39, tex:'2k_mercury.jpg',       angle:0.3, icon:'☿'},
+  {name:'VENUS',   subject:'Chimie & Environnement', color:0xddaa66, diam:0.95, au:0.72, tex:'2k_venus_surface.jpg', angle:1.2, icon:'♀'},
+  {name:'EARTH',   subject:'Géographie & Histoire',  color:0x3377cc, diam:1.0,  au:1.0,  tex:'2k_earth_daymap.jpg',  angle:2.4, icon:'🌍'},
+  {name:'MARS',    subject:'Mathématiques',          color:0xcc4422, diam:0.53, au:1.52, tex:'2k_mars.jpg',          angle:0.8, icon:'♂'},
+  {name:'JUPITER', subject:'Chimie / Sciences',      color:0xccaa66, diam:11.2, au:5.2,  tex:'2k_jupiter.jpg',       angle:3.5, icon:'♃'},
+  {name:'SATURN',  subject:'Astronomie',             color:0xeeccaa, diam:9.45, au:9.5,  tex:'2k_saturn.jpg',        angle:4.8, icon:'♄', rings:true},
+  {name:'URANUS',  subject:'Code & Séquences',       color:0x99ddee, diam:4.0,  au:19.2, tex:'2k_uranus.jpg',        angle:5.7, icon:'♅'},
+  {name:'NEPTUNE', subject:'Code & Séquences',       color:0x3355cc, diam:3.88, au:30.0, tex:'2k_neptune.jpg',       angle:0.9, icon:'♆'},
 ];
 
-const SUN_SIZE = 18;
+PLANETS.forEach(p => {
+  p.size = Math.max(p.diam * 22, 16);   // plus grosses ; plancher 16 pour que Mercure/Mars restent bien visibles
+  p.distance = 540 + p.au * 720;        // décollées du soleil (540 = rayon soleil 280 + marge) : Mercure n'est plus noyée dans la lumière
+});
+const SUN_SIZE = 280;
 const STARS_COUNT = 4000;
-const MOON_DISTANCE_FROM_EARTH = 7;
-const MOON_SIZE = 0.8;
+const MOON_DISTANCE_FROM_EARTH = 45;
+const MOON_SIZE = 4;
 
-const MOVE_SPEED = 40;      // unités par seconde (vitesse de base)
-const BOOST_MULT = 3.5;     // multiplicateur quand CTRL est maintenu
-const MOUSE_SENS = 0.0022;  // sensibilité souris
-const ROLL_SPEED = 3;       // radians par seconde (barrel roll avec Q/E)
+// ── Modes de vol (touche X pour basculer) ──
+// FIGHT = lent + agile pour le combat · CRUISE = rapide pour voyager entre les planètes
+const SPEED_FIGHT  = 280;   // mode combat : lent, manœuvrable
+const SPEED_CRUISE = 1000;  // mode croisière : voyage rapide
+const BOOST_MULT   = 3;     // CTRL = postcombustion (par-dessus le mode courant)
+let flightMode = 'cruise';  // 'cruise' ou 'fight'
+const MOUSE_SENS = 0.003;   // sensibilité souris (plus agile)
 
 /* ===== FIN SECTION: DONNÉES DES PLANÈTES ===== */
 
@@ -1074,24 +1255,46 @@ const ROLL_SPEED = 3;       // radians par seconde (barrel roll avec Q/E)
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000005);
 
+const texLoader = new THREE.TextureLoader();
+const moonTex = texLoader.load('tex/2k_moon.jpg');
+moonTex.encoding = THREE.sRGBEncoding;
+
 const camera = new THREE.PerspectiveCamera(
   75,                                       // FOV
   window.innerWidth / window.innerHeight,   // aspect ratio
-  0.1,                                       // near plane
-  5000                                       // far plane
+  1,                                         // near plane
+  120000                                     // far plane
 );
 
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Tone mapping cinématographique : compresse les hautes lumières, rend les couleurs plus riches
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
 document.body.appendChild(renderer.domElement);
 
+/* ─── Post-processing : pipeline avec bloom (lueur) ─── */
+// Réglages faciles à ajuster :
+const BLOOM_STRENGTH  = 0.8;   // intensité de la lueur (monte = plus lumineux)
+const BLOOM_RADIUS    = 0.55;  // étalement de la lueur
+const BLOOM_THRESHOLD = 0.6;   // seuil : seuls les pixels + brillants que ça brillent
+const composer = new THREE.EffectComposer(renderer);
+composer.addPass(new THREE.RenderPass(scene, camera));
+const bloomPass = new THREE.UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  BLOOM_STRENGTH, BLOOM_RADIUS, BLOOM_THRESHOLD
+);
+composer.addPass(bloomPass);
+// Correction gamma finale (linéaire → sRGB) pour des couleurs justes à l'écran
+composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+
 // Lumière ambiante douce (pour que les côtés sombres ne soient pas noirs purs)
-const ambient = new THREE.AmbientLight(0x334455, 0.4);
+const ambient = new THREE.AmbientLight(0x334455, 0.6);
 scene.add(ambient);
 
 // Lumière principale au centre du soleil
-const sunLight = new THREE.PointLight(0xffeecc, 2.5, 2000, 0.4);
+const sunLight = new THREE.PointLight(0xffeecc, 2.5, 32000, 0.4);
 sunLight.position.set(0, 0, 0);
 scene.add(sunLight);
 
@@ -1109,7 +1312,7 @@ function createStarfield(){
 
   for(let i = 0; i < STARS_COUNT; i++){
     // Position aléatoire sur une grande sphère
-    const r = 1800 + Math.random() * 500;
+    const r = 16000 + Math.random() * 6000;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(Math.random() * 2 - 1);
     positions[i*3]   = r * Math.sin(phi) * Math.cos(theta);
@@ -1135,6 +1338,16 @@ function createStarfield(){
 }
 scene.add(createStarfield());
 
+// Fond Voie lactée (skybox) — le « encore mieux »
+texLoader.load('tex/2k_stars_milky_way.jpg', function(t){
+  t.encoding = THREE.sRGBEncoding;
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(50000, 48, 32),
+    new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide, depthWrite: false })
+  );
+  scene.add(sky);
+});
+
 /* ===== FIN SECTION: FOND ÉTOILÉ ===== */
 
 
@@ -1145,7 +1358,7 @@ scene.add(createStarfield());
 // Sphère principale du soleil (toujours éclairée, peu importe la lumière)
 const sun = new THREE.Mesh(
   new THREE.SphereGeometry(SUN_SIZE, 48, 48),
-  new THREE.MeshBasicMaterial({color: 0xffaa33})
+  new THREE.MeshBasicMaterial({color: 0xffaa33, toneMapped:false})
 );
 scene.add(sun);
 
@@ -1182,15 +1395,24 @@ PLANETS.forEach(p => {
   group.position.set(x, y, z);
 
   // La planète elle-même
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(p.size, 32, 32),
-    new THREE.MeshStandardMaterial({
-      color: p.color,
-      roughness: 0.85,
-      metalness: 0.1
+  const pmat = new THREE.MeshStandardMaterial({ color: p.color, roughness: 1.0, metalness: 0.0 });
+  if(p.tex) texLoader.load('tex/' + p.tex, function(t){ t.encoding = THREE.sRGBEncoding; pmat.map = t; pmat.color.set(0xffffff); pmat.needsUpdate = true; });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.size, 48, 32), pmat);
+  mesh.rotation.z = 0.15; // léger axe incliné
+  group.add(mesh);
+
+  // Atmosphère : halo lumineux qui ressort à l'approche
+  const atmCol = new THREE.Color(p.color).lerp(new THREE.Color(0xffffff), 0.45);
+  const atm = new THREE.Mesh(
+    new THREE.SphereGeometry(p.size * 1.18, 32, 32),
+    new THREE.ShaderMaterial({
+      uniforms: { glowColor: { value: atmCol } },
+      vertexShader: 'varying vec3 vn; varying vec3 vp; void main(){ vn = normalMatrix * normal; vec4 mv = modelViewMatrix * vec4(position,1.0); vp = -mv.xyz; gl_Position = projectionMatrix * mv; }',
+      fragmentShader: 'uniform vec3 glowColor; varying vec3 vn; varying vec3 vp; void main(){ float i = pow(1.0 - abs(dot(normalize(vn), normalize(vp))), 3.0); gl_FragColor = vec4(glowColor, i); }',
+      blending: THREE.AdditiveBlending, transparent: true, depthWrite: false
     })
   );
-  group.add(mesh);
+  group.add(atm);
 
   // Anneaux (Saturne)
   if(p.rings){
@@ -1245,12 +1467,34 @@ const earthData = planetMeshes.find(p => p.data.name === 'EARTH');
 const moonGroup = new THREE.Group();
 moonGroup.position.copy(earthData.group.position);
 const moon = new THREE.Mesh(
-  new THREE.SphereGeometry(MOON_SIZE, 16, 16),
-  new THREE.MeshStandardMaterial({color: 0xbbbbbb, roughness: 0.95})
+  new THREE.SphereGeometry(MOON_SIZE, 24, 16),
+  new THREE.MeshStandardMaterial({ map: moonTex, color: 0xffffff, roughness: 0.95 })
 );
 moon.position.x = MOON_DISTANCE_FROM_EARTH;
 moonGroup.add(moon);
 scene.add(moonGroup);
+
+// ── Lunes du système (en orbite autour de chaque planète) ──
+const moons = [];
+const MOON_COUNTS = { MERCURY:0, VENUS:0, EARTH:0, MARS:2, JUPITER:4, SATURN:5, URANUS:3, NEPTUNE:2 };
+planetMeshes.forEach(function(pm){
+  const n = MOON_COUNTS[pm.data.name] || 0;
+  for(let i=0;i<n;i++){
+    const ms = Math.max(0.8, pm.data.size * (0.05 + Math.random()*0.06));
+    const moon = new THREE.Mesh(
+      new THREE.SphereGeometry(ms, 16, 16),
+      new THREE.MeshStandardMaterial({ map: moonTex, color:0xffffff, roughness:0.95, emissive:0x111111 })
+    );
+    scene.add(moon);
+    moons.push({
+      mesh: moon, planet: pm.group,
+      r: pm.data.size * (1.5 + i*0.45 + Math.random()*0.3),
+      ang: Math.random()*Math.PI*2,
+      speed: 0.08 + Math.random()*0.14,
+      yk: (Math.random()-0.5)*0.4
+    });
+  }
+});
 
 /* ===== FIN SECTION: PLANÈTES ===== */
 
@@ -1306,7 +1550,7 @@ function createShipMesh(){
   tail.position.set(0, 0.4, 1.0);
   group.add(tail);
 
-  // Dôme cockpit (vitre - visible de l'extérieur)
+  // Dôme cockpit (vitre)
   const cockpitGeo = new THREE.SphereGeometry(0.35, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
   const cockpitMat = new THREE.MeshStandardMaterial({
     color: SHIP_ACCENT,
@@ -1324,10 +1568,10 @@ function createShipMesh(){
   const engineMat = new THREE.MeshBasicMaterial({
     color: SHIP_ENGINE_COLOR
   });
-  const engineL = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), engineMat);
+  const engineL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), engineMat);
   engineL.position.set(-0.45, 0, 1.3);
   group.add(engineL);
-  const engineR = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), engineMat);
+  const engineR = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), engineMat);
   engineR.position.set(0.45, 0, 1.3);
   group.add(engineR);
 
@@ -1342,99 +1586,6 @@ function createShipMesh(){
   return group;
 }
 
-// Crée le cockpit intérieur 3D (visible seulement en vue cockpit)
-// Le cockpit est enfant du ship, donc il rotate avec le vaisseau (incluant le barrel roll)
-function createCockpitInterior(){
-  const group = new THREE.Group();
-
-  // Matériau du châssis (métal sombre)
-  const frameMat = new THREE.MeshStandardMaterial({
-    color: 0x223344,
-    emissive: 0x0a1218,
-    roughness: 0.7,
-    metalness: 0.6,
-    flatShading: true
-  });
-
-  // ─── MONTANTS DE VITRE (gauche + droit) ───
-  const pillarGeo = new THREE.BoxGeometry(0.06, 0.85, 0.08);
-
-  const pillarL = new THREE.Mesh(pillarGeo, frameMat);
-  pillarL.position.set(-0.55, 0, -0.85);
-  pillarL.rotation.z = 0.2; // léger angle inward au sommet
-  group.add(pillarL);
-
-  const pillarR = new THREE.Mesh(pillarGeo, frameMat);
-  pillarR.position.set(0.55, 0, -0.85);
-  pillarR.rotation.z = -0.2;
-  group.add(pillarR);
-
-  // Traverse supérieure (haut de la vitre)
-  const topBrace = new THREE.Mesh(
-    new THREE.BoxGeometry(1.1, 0.05, 0.08),
-    frameMat
-  );
-  topBrace.position.set(0, 0.42, -0.85);
-  group.add(topBrace);
-
-  // ─── TABLEAU DE BORD ───
-  // Une plaque inclinée vers le pilote au bas de l'écran
-  const dashGeo = new THREE.BoxGeometry(1.3, 0.05, 0.55);
-  const dashMat = new THREE.MeshStandardMaterial({
-    color: 0x152030,
-    emissive: 0x0a1218,
-    roughness: 0.85,
-    metalness: 0.4
-  });
-  const dashboard = new THREE.Mesh(dashGeo, dashMat);
-  dashboard.position.set(0, -0.45, -0.55);
-  dashboard.rotation.x = -0.45; // inclinée vers le pilote
-  group.add(dashboard);
-
-  // ─── ÉCRANS / INSTRUMENTS LUMINEUX ───
-  // 3 écrans glow embedded dans le dashboard
-  const screenColors = [0x4dc4ff, 0x5dbb96, 0xffaa66];
-  const screenLabels = ['NAV', 'SYS', 'WPN'];
-  for(let i = 0; i < 3; i++){
-    // Le rectangle lumineux du screen
-    const screenGeo = new THREE.PlaneGeometry(0.2, 0.1);
-    const screenMat = new THREE.MeshBasicMaterial({
-      color: screenColors[i],
-      transparent: true,
-      opacity: 0.7
-    });
-    const screen = new THREE.Mesh(screenGeo, screenMat);
-    // Position : sur le dashboard incliné
-    screen.position.set(-0.4 + i * 0.4, -0.32, -0.42);
-    screen.rotation.x = -0.45; // match dashboard tilt
-    group.add(screen);
-  }
-
-  // ─── PETITES LUMIÈRES SUR LE CADRE (status LEDs) ───
-  const ledMat = new THREE.MeshBasicMaterial({color: 0x4dc4ff});
-  const ledPositions = [
-    {x: -0.5, y: 0.38, z: -0.85},
-    {x: 0.5,  y: 0.38, z: -0.85},
-    {x: -0.5, y: -0.15, z: -0.85},
-    {x: 0.5,  y: -0.15, z: -0.85}
-  ];
-  ledPositions.forEach(p => {
-    const led = new THREE.Mesh(
-      new THREE.SphereGeometry(0.022, 6, 6),
-      ledMat
-    );
-    led.position.set(p.x, p.y, p.z);
-    group.add(led);
-  });
-
-  // Lumière d'ambiance dans le cockpit (subtile)
-  const cockpitLight = new THREE.PointLight(0x4dc4ff, 0.15, 3);
-  cockpitLight.position.set(0, 0, -0.5);
-  group.add(cockpitLight);
-
-  return group;
-}
-
 // ── CRÉATION DU VAISSEAU + REPARENTAGE DE LA CAMÉRA ──
 // Le ship est un Group dans la scène. Le mesh visible est un enfant.
 // La caméra devient enfant du ship pour suivre automatiquement.
@@ -1442,30 +1593,108 @@ function createCockpitInterior(){
 const ship = new THREE.Group();
 scene.add(ship);
 
-const shipMesh = createShipMesh();
+// Lumière attachée au vaisseau -> toujours bien visible, peu importe la distance du soleil
+const shipLight = new THREE.PointLight(0xbbd4ff, 1.6, 50);
+shipLight.position.set(0, 7, 5);
+ship.add(shipLight);
+
+// Bouclier visuel autour du vaisseau (flash quand touché)
+const shieldMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(3.6, 32, 24),
+  new THREE.ShaderMaterial({
+    uniforms: { glowColor: { value: new THREE.Color(0x55bbff) }, intensity: { value: 0.0 } },
+    vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }',
+    fragmentShader: 'uniform vec3 glowColor; uniform float intensity; varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1.0 - abs(dot(vN, vV)), 2.2); gl_FragColor = vec4(glowColor, f * intensity); }',
+    transparent: true, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false
+  })
+);
+ship.add(shieldMesh);
+
+// Moteurs visibles : lueur douce (sprite additif qui fait toujours face caméra)
+function makeEngine(x){
+  const cnv = document.createElement('canvas'); cnv.width = cnv.height = 64;
+  const g = cnv.getContext('2d');
+  const grd = g.createRadialGradient(32,32,0, 32,32,32);
+  grd.addColorStop(0,   'rgba(200,240,255,1)');
+  grd.addColorStop(0.35,'rgba(90,180,255,0.75)');
+  grd.addColorStop(1,   'rgba(40,120,255,0)');
+  g.fillStyle = grd; g.fillRect(0,0,64,64);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(cnv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true
+  }));
+  sprite.position.set(x, -0.1, 1.9);
+  sprite.scale.set(1.2, 1.2, 1);
+  ship.add(sprite);
+  return sprite;
+}
+const engineL = makeEngine(-0.7);
+const engineR = makeEngine(0.7);
+
+let shipMesh = createShipMesh();
 ship.add(shipMesh);
 shipMesh.visible = false; // caché par défaut (vue cockpit = on est dedans)
 
-// Cockpit intérieur 3D (visible en vue cockpit, rotate avec le vaisseau)
-const cockpitInterior = createCockpitInterior();
-ship.add(cockpitInterior);
-cockpitInterior.visible = true; // visible par défaut (on commence en cockpit)
+// ── Vaisseaux 3D interchangeables (touche B pour changer) ──
+const SHIP_FILES = ['ship1.glb','ship2.glb','ship3.glb','ship4.glb','ship5.glb','ship6.glb'];
+let shipIndex = 0;
+let _gltf = null;
+try { if (typeof THREE.GLTFLoader !== 'undefined') _gltf = new THREE.GLTFLoader(); }
+catch(e){ console.warn('GLTFLoader indispo', e); }
 
-// Position de départ : près de la Terre, regardant vers le soleil
+function loadShip(i){
+  if(!_gltf) return;
+  _gltf.load(SHIP_FILES[i], function(gltf){
+    const model = gltf.scene;
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3(); box.getSize(size);
+    const center = new THREE.Vector3(); box.getCenter(center);
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const s = 2.5 / maxDim;
+    model.scale.setScalar(s);
+    model.position.set(-center.x*s, -center.y*s, -center.z*s);
+    model.rotation.y = Math.PI; // orientation du nez (ajustable)
+    model.traverse(function(o){
+      if(o.isMesh && o.material){
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach(function(m){
+          if(m.color){ m.emissive = m.color.clone().multiplyScalar(0.45); m.emissiveIntensity = 1; }
+          if('metalness' in m) m.metalness = 0.3;
+          if('roughness' in m) m.roughness = 0.6;
+        });
+      }
+    });
+    const wasVisible = shipMesh.visible;
+    ship.remove(shipMesh);
+    shipMesh = model;
+    ship.add(shipMesh);
+    shipMesh.visible = wasVisible;
+    console.log('Vaisseau:', SHIP_FILES[i]);
+  }, undefined, function(err){ console.warn('Échec', SHIP_FILES[i], err); });
+}
+loadShip(0);
+
+function cycleShip(){
+  shipIndex = (shipIndex + 1) % SHIP_FILES.length;
+  loadShip(shipIndex);
+  if(viewMode !== 'external') setView('external'); // pour voir le vaisseau
+}
+
+// Position de départ : juste devant la Terre, dos au soleil (belle vue de lancement)
 ship.position.set(
-  earthData.group.position.x * 0.55,
-  earthData.group.position.y + 15,
-  earthData.group.position.z * 0.55 + 15
+  earthData.group.position.x * 0.86,
+  earthData.group.position.y + 25,
+  earthData.group.position.z * 0.86
 );
 
-// Orientation initiale : regarder vers le soleil (origine)
-let yaw = 0, pitch = 0, roll = 0;
+// Orientation initiale : regarder vers la Terre (le soleil reste derrière → pas d'éblouissement)
+let yaw = 0, pitch = 0;
+let rollAngle = 0, rollTarget = 0; let mdx = 0, mdy = 0; // souris accumulée (pilotage)
 {
-  const dir = new THREE.Vector3().subVectors(new THREE.Vector3(0,0,0), ship.position).normalize();
+  const dir = new THREE.Vector3().subVectors(earthData.group.position, ship.position).normalize();
   yaw = Math.atan2(-dir.x, -dir.z);
   pitch = Math.asin(dir.y);
 }
-ship.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, roll, 'YXZ'));
+ship.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
 
 // Reparenter la caméra au ship (était un objet libre)
 ship.add(camera);
@@ -1482,16 +1711,14 @@ function setView(mode){
   viewMode = mode;
   if(mode === 'cockpit'){
     camera.position.set(0, 0, 0);  // caméra à l'intérieur du ship
-    shipMesh.visible = false;       // on cache le ship extérieur (on est dedans)
-    cockpitInterior.visible = true; // on montre le cockpit 3D
+    shipMesh.visible = false;       // on cache le ship (on est dedans)
     if(started && !landed){
       document.getElementById('cockpitOverlay').classList.add('show');
     }
     document.getElementById('vmValue').textContent = 'COCKPIT';
   } else {
     camera.position.copy(EXTERNAL_VIEW_OFFSET); // caméra derrière/au-dessus
-    shipMesh.visible = true;                     // ship extérieur visible
-    cockpitInterior.visible = false;             // on cache l'intérieur
+    shipMesh.visible = true;                     // ship visible
     document.getElementById('cockpitOverlay').classList.remove('show');
     document.getElementById('vmValue').textContent = 'EXTERNE';
   }
@@ -1509,7 +1736,7 @@ function toggleView(){
 /* ====================================================== */
 
 // Constantes du tir
-const PROJECTILE_SPEED    = 220;   // unités par seconde
+const PROJECTILE_SPEED    = 650;   // unités par seconde (bien plus vite que le vaisseau)
 const PROJECTILE_LIFETIME = 3.0;   // secondes avant despawn
 const FIRE_COOLDOWN       = 0.18;  // secondes entre tirs (par canon)
 const PROJECTILE_COLOR    = 0xff7733;
@@ -1521,23 +1748,35 @@ let lastFireTime = 0;
 let mouseDown = false;
 let asteroidsDestroyed = 0; // compteur (pour score futur)
 
+// Bouclier + missiles
+let shield = 100; const SHIELD_MAX = 100; let shieldHitCd = 0; let shieldFlash = 0;
+let lastMissileTime = 0; const MISSILE_COOLDOWN = 0.9;
+// Ennemis (dogfight)
+let enemies = []; let enemyTemplate = null;
+// Missile lock
+let lockProgress = 0; let locked = false;
+
 // Crée un projectile (cylindre brillant)
 function createProjectileMesh(){
   const group = new THREE.Group();
 
   // Le bolt - cylindre allongé
-  const geo = new THREE.CylinderGeometry(0.12, 0.12, 1.5, 6);
+  const geo = new THREE.CylinderGeometry(0.14, 0.14, 2.6, 8);
   geo.rotateX(Math.PI / 2); // axe long aligné sur Z
   const mat = new THREE.MeshBasicMaterial({
-    color: PROJECTILE_COLOR
+    color: PROJECTILE_COLOR, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending
   });
   const bolt = new THREE.Mesh(geo, mat);
   group.add(bolt);
-
-  // Petite lumière pour faire glow
-  const light = new THREE.PointLight(PROJECTILE_COLOR, 0.8, 5);
-  group.add(light);
-
+  // halo lumineux additif autour du tir
+  const glowGeo = new THREE.CylinderGeometry(0.42, 0.42, 2.6, 8);
+  glowGeo.rotateX(Math.PI / 2);
+  const glow = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({
+    color: PROJECTILE_COLOR, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false
+  }));
+  group.add(glow);
+  // Pas de lumière par projectile : changer le nombre de lumières force Three.js à
+  // recompiler TOUS les matériaux à chaque tir -> gros lag. Le bolt brille déjà (MeshBasic).
   return group;
 }
 
@@ -1555,7 +1794,7 @@ function fireWeapon(){
 
   // Direction forward du vaisseau (monde)
   const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(ship.quaternion);
-  const velocity = forward.clone().multiplyScalar(PROJECTILE_SPEED);
+  const velocity = forward.clone().multiplyScalar(PROJECTILE_SPEED).add(shipVel);
 
   // On tire 2 projectiles : un de chaque aile
   const wingOffsets = [
@@ -1582,6 +1821,49 @@ function fireWeapon(){
   playFireSound();
 }
 
+// Tir de MISSILE (clic droit) : gros projectile + explosion de zone
+function fireMissile(){
+  if(!hasWeapons() || !started || landed || !pointerLocked) return;
+  const now = performance.now()/1000;
+  if(now - lastMissileTime < MISSILE_COOLDOWN) return;
+  lastMissileTime = now;
+  ship.updateMatrixWorld(true);
+  const forward = new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion);
+  const proj = createProjectileMesh();
+  proj.scale.set(2.4, 2.4, 2.4);
+  if(proj.children[0] && proj.children[0].material) proj.children[0].material.color.set(0xffcc33);
+  if(proj.children[1] && proj.children[1].material) proj.children[1].material.color.set(0xffaa22);
+  const worldPos = new THREE.Vector3(0,0,-1.6).applyMatrix4(ship.matrixWorld);
+  proj.position.copy(worldPos);
+  proj.quaternion.copy(ship.quaternion);
+  scene.add(proj);
+  projectiles.push({ mesh: proj, velocity: forward.clone().multiplyScalar(340).add(shipVel), life: 4.0, isMissile:true, splash:9, target: (locked && lockTarget && lockTarget.alive) ? lockTarget : null });
+  playFireSound();
+}
+
+// Tir RAFALE (arme 3) : 3 lasers en éventail
+function fireSpread(){
+  if(!hasWeapons() || !started || landed || !pointerLocked) return;
+  const now = performance.now()/1000;
+  if(now - lastFireTime < FIRE_COOLDOWN * 1.6) return;
+  lastFireTime = now;
+  ship.updateMatrixWorld(true);
+  const base = new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion);
+  const right = new THREE.Vector3(1,0,0).applyQuaternion(ship.quaternion);
+  const nose = new THREE.Vector3(0,0,-1.5).applyMatrix4(ship.matrixWorld);
+  for(let a=-1; a<=1; a++){
+    const dir = base.clone().addScaledVector(right, a*0.13).normalize();
+    const proj = createProjectileMesh();
+    if(proj.children[0] && proj.children[0].material) proj.children[0].material.color.set(0x66ffaa);
+    if(proj.children[1] && proj.children[1].material) proj.children[1].material.color.set(0x66ffaa);
+    proj.position.copy(nose);
+    proj.quaternion.copy(ship.quaternion);
+    scene.add(proj);
+    projectiles.push({ mesh: proj, velocity: dir.multiplyScalar(PROJECTILE_SPEED).add(shipVel), life: PROJECTILE_LIFETIME });
+  }
+  playFireSound();
+}
+
 // Détruit un astéroïde (le cache + spawn explosion)
 function destroyAsteroid(ast){
   if(!ast.alive) return;
@@ -1601,23 +1883,20 @@ function destroyAsteroid(ast){
 
 // Spawn une explosion (sphère qui grandit puis s'efface)
 function spawnExplosion(x, y, z){
-  const geo = new THREE.SphereGeometry(0.4, 12, 12);
+  const geo = new THREE.SphereGeometry(0.6, 16, 16);
   const mat = new THREE.MeshBasicMaterial({
-    color: 0xff9944,
+    color: 0xffaa33,
     transparent: true,
-    opacity: 1
+    opacity: 1,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(x, y, z);
-
-  const light = new THREE.PointLight(0xff9944, 2, 12);
-  light.position.set(x, y, z);
-
   scene.add(mesh);
-  scene.add(light);
 
   explosions.push({
-    mesh, light,
+    mesh,
     life: 1.0 // 0 = mort, 1 = naissance
   });
 }
@@ -1627,22 +1906,58 @@ function updateProjectilesAndExplosions(dt){
   // ── Projectiles ──
   for(let i = projectiles.length - 1; i >= 0; i--){
     const p = projectiles[i];
+    if(p.isMissile && p.target && p.target.alive){
+      const sp = p.velocity.length();
+      const des = new THREE.Vector3().subVectors(p.target.obj.position, p.mesh.position).normalize().multiplyScalar(sp);
+      p.velocity.lerp(des, Math.min(1, dt*3)); // missile à tête chercheuse
+    }
     p.mesh.position.addScaledVector(p.velocity, dt);
     p.life -= dt;
 
-    // Collision avec astéroïdes
     let hit = false;
-    for(const ast of asteroidData){
-      if(!ast.alive) continue;
-      const dx = p.mesh.position.x - ast.x;
-      const dy = p.mesh.position.y - ast.y;
-      const dz = p.mesh.position.z - ast.z;
-      const distSq = dx*dx + dy*dy + dz*dz;
-      const hitDist = ast.radius + 0.5;
-      if(distSq < hitDist * hitDist){
-        destroyAsteroid(ast);
+
+    if(p.fromEnemy){
+      // tir ennemi : touche le joueur ? -> baisse le bouclier
+      if(ship.position.distanceTo(p.mesh.position) < 3.0){
+        shield = Math.max(0, shield - 12);
+        shieldHitCd = 0.2;
+        shieldFlash = 1.0;
         hit = true;
-        break;
+      }
+    } else {
+      // tir joueur : touche un ennemi ?
+      for(const e of enemies){
+        if(!e.alive) continue;
+        if(e.obj.position.distanceTo(p.mesh.position) < 4.0){
+          e.hp -= (p.isMissile ? 45 : 14);
+          spawnExplosion(p.mesh.position.x, p.mesh.position.y, p.mesh.position.z);
+          if(e.hp <= 0) killEnemy(e);
+          hit = true; break;
+        }
+      }
+      // sinon : touche un astéroïde ?
+      if(!hit) for(const ast of asteroidData){
+        if(!ast.alive) continue;
+        const dx = p.mesh.position.x - ast.x;
+        const dy = p.mesh.position.y - ast.y;
+        const dz = p.mesh.position.z - ast.z;
+        const distSq = dx*dx + dy*dy + dz*dz;
+        const hitDist = ast.radius + (p.isMissile ? 1.0 : 0.5);
+        if(distSq < hitDist * hitDist){
+          if(p.isMissile){
+            const ix = p.mesh.position.x, iy = p.mesh.position.y, iz = p.mesh.position.z;
+            for(const a2 of asteroidData){
+              if(!a2.alive) continue;
+              const ex = a2.x-ix, ey = a2.y-iy, ez = a2.z-iz;
+              if(ex*ex+ey*ey+ez*ez < p.splash*p.splash) destroyAsteroid(a2);
+            }
+            spawnExplosion(ix, iy, iz);
+          } else {
+            destroyAsteroid(ast);
+          }
+          hit = true;
+          break;
+        }
       }
     }
 
@@ -1659,14 +1974,12 @@ function updateProjectilesAndExplosions(dt){
 
     if(e.life <= 0){
       scene.remove(e.mesh);
-      scene.remove(e.light);
       explosions.splice(i, 1);
     } else {
       // Grandit + s'efface
-      const scale = 1 + (1 - e.life) * 5;
+      const scale = 1 + (1 - e.life) * 8;
       e.mesh.scale.setScalar(scale);
       e.mesh.material.opacity = e.life;
-      e.light.intensity = 2 * e.life;
     }
   }
 }
@@ -1765,18 +2078,25 @@ document.addEventListener('pointerlockchange', () => {
 // Mouvement de la souris : update yaw/pitch
 document.addEventListener('mousemove', (e) => {
   if(!pointerLocked) return;
-  yaw -= e.movementX * MOUSE_SENS;
-  pitch -= e.movementY * MOUSE_SENS;
-  // Limiter le pitch pour ne pas faire de loop
-  pitch = Math.max(-Math.PI/2 + 0.01, Math.min(Math.PI/2 - 0.01, pitch));
+  mdx += e.movementX;
+  mdy += e.movementY;
 });
 
 // État des touches
 const keys = {};
 document.addEventListener('keydown', (e) => {
   keys[e.code] = true;
+  if(typeof jupActive !== 'undefined' && jupActive){
+    if(e.code === 'Space'){ e.preventDefault(); jupiterCombine(); }
+    return; // pendant le labo Jupiter, on bloque les commandes du vaisseau
+  }
   if(e.code === 'KeyF') handleLand();
   if(e.code === 'KeyV') toggleView();
+  if(e.code === 'KeyB') cycleShip();
+  if(e.code === 'KeyX'){ flightMode = (flightMode === 'cruise') ? 'fight' : 'cruise'; showFlightMode(); }
+  if(e.code === 'Digit1') currentWeapon = 1;
+  if(e.code === 'Digit2') currentWeapon = 2;
+  if(e.code === 'Digit3') currentWeapon = 3;
 });
 document.addEventListener('keyup', (e) => {
   keys[e.code] = false;
@@ -1789,6 +2109,10 @@ document.addEventListener('mousedown', (e) => {
 document.addEventListener('mouseup', (e) => {
   if(e.button === 0) mouseDown = false;
 });
+// Clic DROIT = zoom (viser / locker à distance)
+document.addEventListener('mousedown', (e) => { if(e.button === 2) zoom = true; });
+document.addEventListener('mouseup', (e) => { if(e.button === 2) zoom = false; });
+document.addEventListener('contextmenu', (e) => e.preventDefault());
 
 /* ===== FIN SECTION: CONTRÔLES ===== */
 
@@ -1799,6 +2123,44 @@ document.addEventListener('mouseup', (e) => {
 
 let currentSpeed = 0;
 let nearbyPlanet = null;
+let narratedPlanet = null;
+const shipVel = new THREE.Vector3();   // vitesse du vaisseau (héritée par les tirs)
+let currentWeapon = 1;                 // 1=laser 2=missile 3=rafale
+let zoom = false;                      // clic droit
+const enemyMarkers = [];               // marqueurs rouges à l'écran
+
+// ── Narration vocale (voix du navigateur) ──
+const NARRATION = {
+  MERCURY: "Mercure, la planète la plus proche du Soleil. La plus petite, sans atmosphère : brûlante le jour, glaciale la nuit. Ici, on étudie la vitesse et la physique.",
+  VENUS: "Vénus, presque jumelle de la Terre, mais un véritable enfer : une atmosphère épaisse de dioxyde de carbone et une chaleur qui ferait fondre le plomb. Place à la chimie et l'environnement.",
+  EARTH: "La Terre, notre maison. La seule planète connue avec de la vie et de l'eau liquide. On y explore la géographie et l'histoire.",
+  MARS: "Mars, la planète rouge, couverte de poussière de fer rouillé. On y a trouvé des traces d'eau ancienne. Atterris pour relever des défis de mathématiques.",
+  JUPITER: "Jupiter, la géante du système solaire : si grosse que toutes les autres planètes tiendraient à l'intérieur. Ses bandes sont d'immenses tempêtes. Bienvenue au laboratoire de chimie.",
+  SATURN: "Saturne et ses magnifiques anneaux, faits de milliards de morceaux de glace et de roche. La planète de l'astronomie.",
+  URANUS: "Uranus, la géante de glace qui roule sur le côté, inclinée à près de quatre-vingt-dix degrés. On y déchiffre le code et les séquences.",
+  NEPTUNE: "Neptune, la plus lointaine des planètes, balayée par les vents les plus violents du système solaire. Encore du code et des séquences à percer."
+};
+let frVoice = null;
+function pickVoice(){ if(!('speechSynthesis' in window)) return; const vs = speechSynthesis.getVoices(); frVoice = vs.find(v => /fr/i.test(v.lang)) || null; }
+if('speechSynthesis' in window){ pickVoice(); window.speechSynthesis.onvoiceschanged = pickVoice; }
+function speakPlanet(name){
+  if(!('speechSynthesis' in window)) return;
+  const txt = NARRATION[name]; if(!txt) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(txt);
+  u.lang = 'fr-FR'; if(frVoice) u.voice = frVoice; u.rate = 1.0; u.pitch = 1.0;
+  window.speechSynthesis.speak(u);
+}
+
+function showFlightMode(){
+  const el = document.getElementById('flightModeInd');
+  if(!el) return;
+  const fight = flightMode === 'fight';
+  el.innerHTML = (fight ? '⚔ MODE COMBAT' : '✦ MODE CROISIÈRE') + ' <span class="fmi-key">[X]</span>';
+  el.classList.toggle('fight', fight);
+  el.classList.add('show');
+  el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); // relance l'animation
+}
 
 function updateHUD(){
   // Position du ship (la "vraie" position du joueur)
@@ -1835,14 +2197,105 @@ function updateHUD(){
         piSubject.textContent = nearest.data.subject;
       }
       document.getElementById('planetInfo').classList.add('active');
+      if(narratedPlanet !== nearest){ narratedPlanet = nearest; speakPlanet(nearest.data.name); }
     } else {
       nearbyPlanet = null;
       document.getElementById('planetInfo').classList.remove('active');
+      if(narratedPlanet){ narratedPlanet = null; if('speechSynthesis' in window) window.speechSynthesis.cancel(); }
     }
   }
 
   // Compteur astéroïdes détruits
   document.getElementById('hudDestroyed').textContent = asteroidsDestroyed;
+
+  const sf = document.getElementById('hudShieldFill');
+  if(sf) sf.style.width = shield + '%';
+
+  // ── Cadrans cockpit ──
+  const cg = document.getElementById('cockpitGauges');
+  if(cg) cg.classList.toggle('show', viewMode === 'cockpit');
+  // Cadrans à aiguille
+  const spAng = -120 + Math.min(1, currentSpeed / 250) * 240;
+  const nS = document.getElementById('needleSpeed'); if(nS) nS.setAttribute('transform', 'rotate(' + spAng.toFixed(1) + ' 50 50)');
+  setText('dialSpeed', Math.round(currentSpeed));
+  const shAng = -120 + (shield / SHIELD_MAX) * 240;
+  const nSh = document.getElementById('needleShield'); if(nSh) nSh.setAttribute('transform', 'rotate(' + shAng.toFixed(1) + ' 50 50)');
+  setText('dialShield', Math.round(shield));
+
+  // ── Cible / ennemi ──
+  let edist = null;
+  for(const e of enemies){ if(!e.alive) continue; const d = ship.position.distanceTo(e.obj.position); if(edist === null || d < edist) edist = d; }
+  setText('cgTarget', edist !== null ? Math.round(edist) : '—');
+
+  // ── Cadran ENNEMIS : nombre d'ennemis en vie, rouge si une menace est proche ──
+  const cgE = document.getElementById('cgEnemies');
+  if(cgE){
+    const aliveEnemies = enemies.filter(e => e.alive).length;
+    cgE.textContent = aliveEnemies;
+    cgE.style.color = (edist !== null && edist < 600) ? '#ff5544' : '#4dc4ff';
+  }
+
+  // ── Lock missile (UI) ──
+  const li = document.getElementById('lockIndicator');
+  const ret = document.getElementById('reticle');
+  if(locked){
+    li.classList.add('show','locked'); li.textContent = '● VERROUILLÉ';
+    if(ret) ret.classList.add('locked'); setText('cgLock','LOCK');
+  } else if(lockProgress > 0.01){
+    li.classList.add('show'); li.classList.remove('locked');
+    li.textContent = 'ACQUISITION ' + Math.round(lockProgress*100) + '%';
+    if(ret) ret.classList.remove('locked'); setText('cgLock', Math.round(lockProgress*100)+'%');
+  } else {
+    li.classList.remove('show','locked'); if(ret) ret.classList.remove('locked'); setText('cgLock','—');
+  }
+
+  // ── Alerte ennemi ──
+  const ea = document.getElementById('enemyAlert');
+  if(ea) ea.classList.toggle('show', edist !== null && edist < 600);
+
+  const wnames = {1:'LASER', 2:'MISSILE', 3:'RAFALE'};
+  setText('weaponInd', 'ARME : ' + (wnames[currentWeapon] || 'LASER') + '   [1·2·3]');
+
+  // ── Marqueurs ennemis à l'écran (repérage à distance) ──
+  for(let i=0;i<enemies.length;i++){
+    let mk = enemyMarkers[i];
+    if(!mk){ mk = document.createElement('div'); mk.className = 'enemy-marker'; document.body.appendChild(mk); enemyMarkers[i] = mk; }
+    const e = enemies[i];
+    if(e.alive){
+      const v = e.obj.position.clone().project(camera);
+      if(v.z < 1 && v.x > -1.3 && v.x < 1.3 && v.y > -1.3 && v.y < 1.3){
+        mk.style.left = ((v.x*0.5+0.5) * window.innerWidth) + 'px';
+        mk.style.top = ((-v.y*0.5+0.5) * window.innerHeight) + 'px';
+        mk.style.display = 'block';
+        mk.classList.toggle('locked', lockTarget === e);
+      } else { mk.style.display = 'none'; }
+    } else { mk.style.display = 'none'; }
+  }
+
+  // ── Minimap ──
+  drawMinimap();
+}
+
+function setText(id, v){ const el = document.getElementById(id); if(el) el.textContent = v; }
+
+function drawMinimap(){
+  const cv = document.getElementById('minimap'); if(!cv) return;
+  const ctx = cv.getContext('2d'); const cx = 75, cy = 75, R = 66;
+  ctx.clearRect(0, 0, 150, 150);
+  const range = 3000; const k = R / range; // radar local autour du joueur
+  function plot(wx, wz, color, r){
+    const dx = (wx - ship.position.x) * k, dz = (wz - ship.position.z) * k;
+    if(dx*dx + dz*dz > R*R) return;
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(cx + dx, cy + dz, r, 0, 7); ctx.fill();
+  }
+  plot(0, 0, '#ffaa33', 3); // soleil
+  planetMeshes.forEach(function(p){ plot(p.group.position.x, p.group.position.z, 'rgba(130,170,210,0.8)', Math.max(1.5, p.data.size*k*3)); });
+  for(const e of enemies){ if(e.alive) plot(e.obj.position.x, e.obj.position.z, '#ff4444', 2.6); }
+  // joueur au centre (flèche orientée)
+  const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion);
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.atan2(fwd.x, -fwd.z));
+  ctx.fillStyle = '#4dc4ff'; ctx.beginPath(); ctx.moveTo(0,-5); ctx.lineTo(3.5,4); ctx.lineTo(-3.5,4); ctx.closePath(); ctx.fill();
+  ctx.restore();
 }
 
 /* ===== FIN SECTION: HUD & DÉTECTION ===== */
@@ -1933,69 +2386,57 @@ function updateRankDisplay(){
 /* ===== DÉBUT SECTION: CEINTURE D'ASTÉROÏDES ===== */
 /* ====================================================== */
 
-const BELT_INNER_RADIUS = 130;
-const BELT_OUTER_RADIUS = 160;
-const BELT_Y_HALF = 10;        // demi-épaisseur visuelle (asteroides répartis ±10)
-const BELT_BLOCK_Y = 13;       // demi-épaisseur de la zone de collision (un peu plus large que visible)
-const BELT_BLOCK_INNER = 127;  // bordure intérieure du blocage
-const BELT_BLOCK_OUTER = 163;  // bordure extérieure du blocage
-const ASTEROID_COUNT = 450;
+// La ceinture se place AUTOMATIQUEMENT entre Mars et Jupiter (s'adapte si on change les distances)
+const _marsDist = PLANETS.find(p => p.name === 'MARS').distance;
+const _jupDist  = PLANETS.find(p => p.name === 'JUPITER').distance;
+const BELT_INNER_RADIUS = _marsDist + (_jupDist - _marsDist) * 0.30; // début de l'anneau
+const BELT_OUTER_RADIUS = _marsDist + (_jupDist - _marsDist) * 0.62; // fin de l'anneau
+const BELT_Y_HALF = 28;        // demi-épaisseur visuelle (astéroïdes répartis ±28)
+const BELT_BLOCK_Y = 38;       // demi-épaisseur de la zone de collision (un peu plus large que visible)
+const BELT_BLOCK_INNER = BELT_INNER_RADIUS - 90;  // bordure intérieure du blocage (alignée sur le visuel)
+const BELT_BLOCK_OUTER = BELT_OUTER_RADIUS + 90;  // bordure extérieure du blocage
+const ASTEROID_COUNT = 1000;
 
-// Tableau de données pour chaque astéroïde (collision + destruction)
-const asteroidData = []; // {x, y, z, radius, alive, instanceIdx}
+// Tableau de données pour chaque astéroïde (orbite + collision + destruction)
+const asteroidData = [];
 
 function createAsteroidBelt(){
-  // Une géométrie low-poly pour tous les astéroïdes (InstancedMesh = très performant)
-  const geo = new THREE.IcosahedronGeometry(1, 0); // 20 faces, look rocailleux
+  const geo = new THREE.IcosahedronGeometry(1, 0);
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x8a6a4a,
-    emissive: 0x221100,  // un peu de lumière propre pour qu'ils restent visibles loin du soleil
-    roughness: 0.95,
-    metalness: 0.1,
-    flatShading: true
+    color: 0x8a6a4a, emissive: 0x221100, roughness: 0.95, metalness: 0.1, flatShading: true
   });
-
   const instanced = new THREE.InstancedMesh(geo, mat, ASTEROID_COUNT);
-
   const matrix = new THREE.Matrix4();
   const pos = new THREE.Vector3();
   const quat = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
   const euler = new THREE.Euler();
 
   for(let i = 0; i < ASTEROID_COUNT; i++){
-    // Position aléatoire dans l'anneau
-    const r = BELT_INNER_RADIUS + Math.random() * (BELT_OUTER_RADIUS - BELT_INNER_RADIUS);
+    const r = BELT_INNER_RADIUS + Math.random() * (BELT_OUTER_RADIUS - BELT_INNER_RADIUS); // entre Mars et Jupiter
     const theta = Math.random() * Math.PI * 2;
-    pos.x = Math.cos(theta) * r;
-    pos.z = Math.sin(theta) * r;
-    pos.y = (Math.random() - 0.5) * (BELT_Y_HALF * 2);
+    const y = (Math.random() - 0.5) * 2 * BELT_Y_HALF;
 
-    // Taille irrégulière sur 3 axes pour shapes uniques
-    const baseSize = 0.4 + Math.random() * 1.5;
-    scale.set(
+    const baseSize = 1.0 + Math.random() * 3.0;          // PLUS GROS
+    const scaleVec = new THREE.Vector3(
       baseSize * (0.7 + Math.random() * 0.6),
       baseSize * (0.7 + Math.random() * 0.6),
       baseSize * (0.7 + Math.random() * 0.6)
     );
+    const spin = new THREE.Vector3(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
+    const spinSpeed = new THREE.Vector3((Math.random()-0.5)*1.2, (Math.random()-0.5)*1.2, (Math.random()-0.5)*1.2);
+    const omega = (0.12 + Math.random() * 0.06) * (1800 / r); // orbite : intérieur plus rapide
 
-    // Rotation aléatoire
-    euler.set(
-      Math.random() * Math.PI * 2,
-      Math.random() * Math.PI * 2,
-      Math.random() * Math.PI * 2
-    );
+    pos.set(Math.cos(theta)*r, y, Math.sin(theta)*r);
+    euler.set(spin.x, spin.y, spin.z);
     quat.setFromEuler(euler);
-
-    matrix.compose(pos, quat, scale);
+    matrix.compose(pos, quat, scaleVec);
     instanced.setMatrixAt(i, matrix);
 
-    // Sauvegarder les infos pour collision et destruction
     asteroidData.push({
-      x: pos.x, y: pos.y, z: pos.z,
-      radius: baseSize * 1.2, // rayon de hit (un peu plus généreux que la taille visuelle)
-      alive: true,
-      instanceIdx: i
+      x: pos.x, y: y, z: pos.z,
+      orbitR: r, theta: theta, omega: omega,
+      scaleVec: scaleVec, spin: spin, spinSpeed: spinSpeed,
+      radius: baseSize * 1.2, alive: true, instanceIdx: i
     });
   }
   instanced.instanceMatrix.needsUpdate = true;
@@ -2004,6 +2445,120 @@ function createAsteroidBelt(){
 
 const asteroidBelt = createAsteroidBelt();
 scene.add(asteroidBelt);
+
+// Les astéroïdes tournent autour du soleil + sur eux-mêmes
+const _am = new THREE.Matrix4(), _ap = new THREE.Vector3(), _aq = new THREE.Quaternion(), _ae = new THREE.Euler();
+function updateAsteroids(dt){
+  for(const a of asteroidData){
+    if(!a.alive) continue;
+    a.theta += a.omega * dt;
+    a.x = Math.cos(a.theta) * a.orbitR;
+    a.z = Math.sin(a.theta) * a.orbitR;
+    a.spin.x += a.spinSpeed.x * dt;
+    a.spin.y += a.spinSpeed.y * dt;
+    a.spin.z += a.spinSpeed.z * dt;
+    _ap.set(a.x, a.y, a.z);
+    _ae.set(a.spin.x, a.spin.y, a.spin.z);
+    _aq.setFromEuler(_ae);
+    _am.compose(_ap, _aq, a.scaleVec);
+    asteroidBelt.setMatrixAt(a.instanceIdx, _am);
+  }
+  asteroidBelt.instanceMatrix.needsUpdate = true;
+}
+
+// ============ ENNEMI (vaisseau rouge qui chasse + tire) ============
+const ENEMY_FILE = 'ship5.glb';
+
+function prepEnemyScene(gltf){
+  const m = gltf.scene;
+  const box = new THREE.Box3().setFromObject(m);
+  const sz = new THREE.Vector3(); box.getSize(sz);
+  const ctr = new THREE.Vector3(); box.getCenter(ctr);
+  const s = 7.5 / (Math.max(sz.x, sz.y, sz.z) || 1);   // ennemis plus gros
+  m.scale.setScalar(s);
+  m.position.set(-ctr.x*s, -ctr.y*s, -ctr.z*s);
+  m.traverse(function(o){
+    if(o.isMesh && o.material){
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach(function(mm){
+        if(mm.color) mm.color.multiplyScalar(0.85);
+        mm.emissive = new THREE.Color(0xff3010);
+        mm.emissiveIntensity = 1.4;                      // bien rouge/lumineux
+      });
+    }
+  });
+  return m;
+}
+
+const ENEMY_COUNT = 3;
+let lockTarget = null;
+
+function buildEnemyAt(e, pos){
+  const holder = new THREE.Group();
+  holder.add(enemyTemplate.clone(true));
+  holder.position.copy(pos);
+  scene.add(holder);
+  e.obj = holder; e.hp = 70; e.maxHp = 70; e.fireCd = 1 + Math.random(); e.alive = true; e.respawnCd = 0;
+}
+
+function randomEnemyPos(){
+  const a = Math.random()*Math.PI*2;
+  return new THREE.Vector3(
+    ship.position.x + Math.cos(a)*150,
+    ship.position.y + (Math.random()-0.5)*60,
+    ship.position.z + Math.sin(a)*150
+  );
+}
+
+function spawnEnemies(){
+  if(!_gltf) return;
+  function go(){
+    for(let i=0;i<ENEMY_COUNT;i++){ const e = {}; buildEnemyAt(e, randomEnemyPos()); enemies.push(e); }
+  }
+  if(enemyTemplate){ go(); return; }
+  _gltf.load(ENEMY_FILE, function(gltf){ enemyTemplate = prepEnemyScene(gltf); go(); },
+    undefined, function(err){ console.warn('Échec ennemi', err); });
+}
+
+function enemyFire(e){
+  const o = e.obj;
+  const dir = new THREE.Vector3().subVectors(ship.position, o.position).normalize();
+  const proj = createProjectileMesh();
+  if(proj.children[0] && proj.children[0].material) proj.children[0].material.color.set(0xff3322);
+  if(proj.children[1] && proj.children[1].material) proj.children[1].material.color.set(0xff3322);
+  proj.position.copy(o.position);
+  proj.lookAt(ship.position);
+  scene.add(proj);
+  projectiles.push({ mesh: proj, velocity: dir.multiplyScalar(450), life: 4.0, fromEnemy: true });
+}
+
+function killEnemy(e){
+  if(!e.alive) return;
+  e.alive = false;
+  const p = e.obj.position;
+  for(let k=0;k<4;k++) spawnExplosion(p.x+(Math.random()-0.5)*5, p.y+(Math.random()-0.5)*5, p.z+(Math.random()-0.5)*5);
+  scene.remove(e.obj);
+  e.respawnCd = 6;
+}
+
+function updateEnemies(dt){
+  for(const e of enemies){
+    if(!e.alive){ e.respawnCd -= dt; if(e.respawnCd <= 0) buildEnemyAt(e, randomEnemyPos()); continue; }
+    if(!started || landed) continue;
+    const o = e.obj;
+    const to = new THREE.Vector3().subVectors(ship.position, o.position);
+    const dist = to.length();
+    const look = new THREE.Matrix4().lookAt(o.position, ship.position, new THREE.Vector3(0,1,0));
+    o.quaternion.slerp(new THREE.Quaternion().setFromRotationMatrix(look), Math.min(1, dt*2.2));
+    to.normalize();
+    if(dist > 55) o.position.addScaledVector(to, 30*dt);       // plus agressif/rapide
+    else if(dist < 32) o.position.addScaledVector(to, -18*dt);
+    e.fireCd -= dt;
+    if(e.fireCd <= 0 && dist < 320){ enemyFire(e); e.fireCd = 1.1 + Math.random()*0.7; }
+  }
+}
+
+spawnEnemies();
 
 // Détection de collision avec la ceinture (pour le joueur sans armes)
 let beltWarningTimeout = null;
@@ -2043,6 +2598,12 @@ function handleLand(){
   if(planetName === 'MARS'){
     landed = true;
     launchMarsGame();
+    return;
+  }
+
+  if(planetName === 'JUPITER'){
+    landed = true;
+    launchJupiterGame();
     return;
   }
 
@@ -2098,17 +2659,24 @@ function animate(){
 
   // ──── MOUVEMENT DU JOUEUR ────
   if(started && !landed){
-    // ── ROLL (Q/E pour barrel roll) ──
-    if(keys['KeyQ']) roll += ROLL_SPEED * dt;
-    if(keys['KeyE']) roll -= ROLL_SPEED * dt;
+    // Update rotation du ship depuis yaw/pitch
+    // Pilotage Star Fox : rotation INCRÉMENTALE en repère local (loops complets, aucun blocage)
+    // Mode combat = plus agile (vire plus serré) ; croisière = plus stable
+    const agility = (flightMode === 'fight') ? 1.6 : 1.0;
+    const dYaw = -mdx * MOUSE_SENS * agility;
+    const dPitch = -mdy * MOUSE_SENS * agility;
+    mdx = 0; mdy = 0;
+    let dRoll = 0;
+    const rollRate = 2.6 * agility;
+    if(keys['KeyQ']) dRoll += rollRate * dt;
+    if(keys['KeyE']) dRoll -= rollRate * dt;
+    const dq = new THREE.Quaternion().setFromEuler(new THREE.Euler(dPitch, dYaw, dRoll, 'XYZ'));
+    ship.quaternion.multiply(dq);
 
-    // Update rotation du ship depuis yaw/pitch/roll
-    ship.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, roll, 'YXZ'));
-
-    // Vecteurs directionnels (basés sur l'orientation du ship - locaux au vaisseau)
+    // Vecteurs directionnels (basés sur l'orientation du ship)
     const forward = new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion);
     const right   = new THREE.Vector3(1,0,0).applyQuaternion(ship.quaternion);
-    const localUp = new THREE.Vector3(0,1,0).applyQuaternion(ship.quaternion); // haut local (suit le roll)
+    const worldUp = new THREE.Vector3(0,1,0);
 
     // Construire le vecteur de mouvement selon les touches
     const move = new THREE.Vector3();
@@ -2116,13 +2684,13 @@ function animate(){
     if(keys['KeyS'])                                 move.sub(forward);
     if(keys['KeyA'])                                 move.sub(right);
     if(keys['KeyD'])                                 move.add(right);
-    if(keys['Space'])                                move.add(localUp);
-    if(keys['ShiftLeft'] || keys['ShiftRight'])      move.sub(localUp);
+    if(keys['Space'])                                move.add(worldUp);
+    if(keys['ShiftLeft'] || keys['ShiftRight'])      move.sub(worldUp);
 
     if(move.length() > 0){
       move.normalize();
-      let speed = MOVE_SPEED;
-      // Boost avec CTRL
+      let speed = (flightMode === 'fight') ? SPEED_FIGHT : SPEED_CRUISE;
+      // Postcombustion avec CTRL
       if(keys['ControlLeft'] || keys['ControlRight']) speed *= BOOST_MULT;
       move.multiplyScalar(speed * dt);
 
@@ -2136,32 +2704,110 @@ function animate(){
       }
 
       currentSpeed = speed;
+      shipVel.copy(move).multiplyScalar(1 / Math.max(dt, 0.0001));
     } else {
       currentSpeed = 0;
+      shipVel.set(0, 0, 0);
     }
 
-    // ── TIR : si clic souris maintenu, tirer (fireWeapon a son propre cooldown) ──
+    // ── TIR : clic gauche maintenu = arme sélectionnée (1/2/3) ──
     if(mouseDown && hasWeapons()){
-      fireWeapon();
+      if(currentWeapon === 2) fireMissile();
+      else if(currentWeapon === 3) fireSpread();
+      else fireWeapon();
     }
   }
 
   // ── UPDATE projectiles et explosions ──
   updateProjectilesAndExplosions(dt);
 
+  // ── Bouclier : collision astéroïdes + régénération ──
+  if(started && !landed){
+    shieldHitCd -= dt;
+    for(const ast of asteroidData){
+      if(!ast.alive) continue;
+      const dx = ship.position.x-ast.x, dy = ship.position.y-ast.y, dz = ship.position.z-ast.z;
+      const rr = ast.radius + 1.8;
+      if(dx*dx+dy*dy+dz*dz < rr*rr && shieldHitCd <= 0){
+        shield = Math.max(0, shield - 18);
+        shieldHitCd = 0.4;
+        shieldFlash = 0.8;   // flash bouclier
+        destroyAsteroid(ast);
+        ship.position.add(new THREE.Vector3(dx,dy,dz).normalize().multiplyScalar(1.5));
+        break;
+      }
+    }
+    if(shield < SHIELD_MAX) shield = Math.min(SHIELD_MAX, shield + 7*dt); // régénération
+    shieldFlash *= 0.90;                                                  // fade du flash
+    if(shieldMesh && shieldMesh.material.uniforms){
+      // Bulle invisible au repos : on n'affiche qu'un bref flash quand on encaisse un coup
+      shieldMesh.material.uniforms.intensity.value = shieldFlash;
+    }
+  }
+
   // ──── ANIMATIONS DE LA SCÈNE ────
 
   // Rotation des planètes sur elles-mêmes
   planetMeshes.forEach(p => {
-    p.mesh.rotation.y += dt * 0.08;
+    p.mesh.rotation.y += dt * 0.15;
   });
 
   // Rotation du soleil
   sun.rotation.y += dt * 0.02;
 
+  // Moteurs : lueur plus grosse/brillante quand on avance
+  {
+    const thrusting = !!(keys['KeyW'] || keys['ArrowUp']);
+    const boosting = thrusting && (keys['ControlLeft'] || keys['ControlRight']);
+    // Lueur plus contenue : moteurs vifs en poussée/boost, discrets au repos (plus de gros orbe blanc)
+    const sc = (boosting ? 1.7 : thrusting ? 1.25 : 0.7) * (0.92 + 0.08 * Math.sin(performance.now() * 0.02));
+    const op = thrusting ? 1.0 : 0.5;
+    if(engineL){ engineL.scale.set(sc, sc, 1); engineL.material.opacity = op; }
+    if(engineR){ engineR.scale.set(sc, sc, 1); engineR.material.opacity = op; }
+  }
+
+  // Astéroïdes : orbite autour du soleil + rotation propre
+  updateAsteroids(dt);
+
+  // Ennemis : chasse + tir (dogfight)
+  updateEnemies(dt);
+
+  // ── Missile lock : verrouille l'ennemi le plus proche DEVANT soi ──
+  if(started && !landed){
+    const lf = new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion);
+    let best = null, bestDist = Infinity;
+    for(const e of enemies){
+      if(!e.alive) continue;
+      const te = new THREE.Vector3().subVectors(e.obj.position, ship.position);
+      const d = te.length(); te.normalize();
+      if(d < 700 && lf.dot(te) > 0.96 && d < bestDist){ best = e; bestDist = d; }
+    }
+    if(best){ lockTarget = best; lockProgress = Math.min(1, lockProgress + dt); }
+    else { lockTarget = null; lockProgress = Math.max(0, lockProgress - dt*2); }
+  } else { lockProgress = Math.max(0, lockProgress - dt*3); lockTarget = null; }
+  locked = lockProgress >= 1 && lockTarget !== null;
+
+  // Zoom (clic droit) : rétrécit le champ de vision pour viser/locker au loin
+  const targetFov = zoom ? 32 : 75;
+  if(Math.abs(camera.fov - targetFov) > 0.05){
+    camera.fov += (targetFov - camera.fov) * Math.min(1, dt*8);
+    camera.updateProjectionMatrix();
+  }
+
   // Orbite de la Lune autour de la Terre
   moonGroup.position.copy(earthData.group.position);
-  moonGroup.rotation.y += dt * 0.4;
+  moonGroup.rotation.y += dt * 0.15;
+
+  // Lunes du système
+  for(const m of moons){
+    m.ang += m.speed * dt;
+    m.mesh.rotation.y += dt * 0.5;
+    m.mesh.position.set(
+      m.planet.position.x + Math.cos(m.ang)*m.r,
+      m.planet.position.y + m.r*m.yk,
+      m.planet.position.z + Math.sin(m.ang)*m.r
+    );
+  }
 
   // ──── HUD ────
   if(started){
@@ -2169,7 +2815,7 @@ function animate(){
   }
 
   // ──── RENDER ────
-  renderer.render(scene, camera);
+  composer.render();
 }
 
 /* ===== FIN SECTION: BOUCLE D'ANIMATION ===== */
@@ -2184,6 +2830,7 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
 });
 
 // Quand tout est chargé : cacher le loading, afficher le start screen, démarrer le render
@@ -2208,6 +2855,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
   // Afficher le cockpit overlay (on commence en vue cockpit)
   document.getElementById('cockpitOverlay').classList.add('show');
   started = true;
+  showFlightMode(); // afficher le mode de vol courant (croisière par défaut)
   // requestLock direct dans le handler du click pour éviter les blocages navigateur
   requestLock();
 });
@@ -2693,6 +3341,146 @@ function marsEndGame(victoire){
   rankEl.style.color = rankColor;
 
   showMarsScreen('marsEnd');
+}
+
+/* ====== JUPITER GAME LOGIC (chimie) ====== */
+const JUP_GOAL = 6;
+const JUP_ELEMENTS = [
+  {s:'H',c:'#7fd4ff'},{s:'O',c:'#ff5a5a'},{s:'C',c:'#9aa0a6'},{s:'N',c:'#7a9bff'},
+  {s:'Na',c:'#ffd24d'},{s:'Cl',c:'#7CFC00'},{s:'Fe',c:'#c98a5a'},{s:'Ca',c:'#e8e8e8'}
+];
+// clés triées alphabétiquement (ex: Na+Cl -> 'Cl|Na')
+const JUP_RECIPES = {
+  'H|O':{n:'H₂O', d:"l'eau 💧"},
+  'Cl|Na':{n:'NaCl', d:'le sel 🧂'},
+  'C|O':{n:'CO₂', d:'le dioxyde de carbone'},
+  'Cl|H':{n:'HCl', d:"l'acide chlorhydrique"},
+  'Fe|O':{n:'Fe₂O₃', d:'la rouille'},
+  'Ca|O':{n:'CaO', d:'la chaux'},
+  'H|N':{n:'NH₃', d:"l'ammoniac"},
+  'C|H':{n:'CH₄', d:'le méthane'}
+};
+let jupActive=false, jupChar={x:380,y:210}, jupItems=[], jupInv=[], jupScore=0, jupFound={}, jupFoundCount=0, jupLoop=null, jupCtx=null;
+
+function jupShow(id){ ['jupIntro','jupPlay','jupEnd'].forEach(s=>document.getElementById(s).classList.remove('show')); document.getElementById(id).classList.add('show'); }
+
+function launchJupiterGame(){
+  document.exitPointerLock();
+  document.getElementById('hud').classList.remove('active');
+  document.getElementById('reticle').classList.remove('active');
+  document.getElementById('planetInfo').classList.remove('active');
+  document.getElementById('lockPrompt').classList.remove('active');
+  document.getElementById('cockpitOverlay').classList.remove('show');
+  document.getElementById('jupiterGame').classList.add('active');
+  jupShow('jupIntro');
+}
+
+function jupiterExit(){
+  if(jupLoop){ clearInterval(jupLoop); jupLoop=null; }
+  jupActive=false;
+  document.getElementById('jupiterGame').classList.remove('active');
+  document.getElementById('hud').classList.add('active');
+  document.getElementById('reticle').classList.add('active');
+  if(viewMode==='cockpit') document.getElementById('cockpitOverlay').classList.add('show');
+  landed=false;
+  if(nearbyPlanet){
+    const dir=new THREE.Vector3().subVectors(ship.position, nearbyPlanet.group.position).normalize();
+    ship.position.copy(nearbyPlanet.group.position).addScaledVector(dir, nearbyPlanet.data.size*4 + 25);
+  }
+  requestLock();
+}
+
+function jupiterRestart(){ jupiterBegin(); }
+
+function jupSpawn(n){
+  while(jupItems.length < n){
+    const el = JUP_ELEMENTS[Math.floor(Math.random()*JUP_ELEMENTS.length)];
+    jupItems.push({ s:el.s, c:el.c, x:30+Math.random()*700, y:30+Math.random()*360 });
+  }
+}
+
+function jupiterBegin(){
+  jupScore=0; jupFound={}; jupFoundCount=0; jupInv=[]; jupItems=[]; jupChar={x:380,y:210};
+  jupSpawn(7);
+  jupShow('jupPlay');
+  jupUpdateHud();
+  document.getElementById('jupFb').className='jup-fb';
+  jupCtx = document.getElementById('jupCanvas').getContext('2d');
+  jupActive=true;
+  if(jupLoop) clearInterval(jupLoop);
+  jupLoop = setInterval(jupiterTick, 33);
+}
+
+function jupUpdateHud(){
+  document.getElementById('jupCount').textContent = jupFoundCount;
+  document.getElementById('jupGoal').textContent = JUP_GOAL;
+  document.getElementById('jupScore').textContent = jupScore;
+  document.getElementById('jupSlot0').textContent = jupInv[0] || '—';
+  document.getElementById('jupSlot1').textContent = jupInv[1] || '—';
+}
+
+function jupiterTick(){
+  const sp = 4.2;
+  if(keys['ArrowLeft']||keys['KeyA']) jupChar.x -= sp;
+  if(keys['ArrowRight']||keys['KeyD']) jupChar.x += sp;
+  if(keys['ArrowUp']||keys['KeyW']) jupChar.y -= sp;
+  if(keys['ArrowDown']||keys['KeyS']) jupChar.y += sp;
+  jupChar.x = Math.max(14, Math.min(746, jupChar.x));
+  jupChar.y = Math.max(14, Math.min(406, jupChar.y));
+  if(jupInv.length < 2){
+    for(let i=jupItems.length-1;i>=0;i--){
+      const it=jupItems[i];
+      if(Math.hypot(it.x-jupChar.x, it.y-jupChar.y) < 22){
+        jupInv.push(it.s); jupItems.splice(i,1); jupSpawn(7); jupUpdateHud(); break;
+      }
+    }
+  }
+  jupDraw();
+}
+
+function jupDraw(){
+  const ctx=jupCtx; if(!ctx) return;
+  const bands=['#caa472','#b08a55','#d8b888','#9a7344','#c69c68','#b8946a'];
+  for(let i=0;i<7;i++){ ctx.fillStyle=bands[i%bands.length]; ctx.fillRect(0, i*60, 760, 60); }
+  ctx.globalAlpha=0.18; ctx.fillStyle='#000'; ctx.fillRect(0,0,760,420); ctx.globalAlpha=1;
+  jupItems.forEach(it=>{
+    ctx.fillStyle=it.c; ctx.beginPath(); ctx.arc(it.x,it.y,13,0,7); ctx.fill();
+    ctx.fillStyle='#111'; ctx.font='bold 13px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(it.s, it.x, it.y);
+  });
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(jupChar.x, jupChar.y, 12, 0, 7); ctx.fill();
+  ctx.fillStyle='#4dc4ff'; ctx.beginPath(); ctx.arc(jupChar.x, jupChar.y-2, 4, 0, 7); ctx.fill();
+}
+
+function jupiterCombine(){
+  if(!jupActive) return;
+  const fb=document.getElementById('jupFb');
+  if(jupInv.length < 2){ fb.className='jup-fb bad'; fb.textContent="Ramasse 2 éléments d'abord!"; return; }
+  const key = [jupInv[0], jupInv[1]].sort().join('|');
+  const r = JUP_RECIPES[key];
+  if(r){
+    jupScore += 100;
+    let neuf = '';
+    if(!jupFound[r.n]){ jupFound[r.n]=r; jupFoundCount++; neuf=' ✨ nouvelle découverte!'; }
+    fb.className='jup-fb ok';
+    fb.textContent = '✓ '+jupInv[0]+' + '+jupInv[1]+' → '+r.n+' : '+r.d+'  (+100)'+neuf;
+  } else {
+    fb.className='jup-fb bad';
+    fb.textContent = '✗ '+jupInv[0]+' + '+jupInv[1]+' → aucune réaction connue';
+  }
+  jupInv=[]; jupUpdateHud();
+  if(jupFoundCount >= JUP_GOAL) jupiterEnd();
+}
+
+function jupiterEnd(){
+  if(jupLoop){ clearInterval(jupLoop); jupLoop=null; }
+  jupActive=false;
+  markPlanetComplete('JUPITER', jupScore);
+  updateRankDisplay();
+  let html='<div class="jup-rule-label">⚗ TES DÉCOUVERTES</div>';
+  for(const k in jupFound){ html += '<div style="margin:5px 0;color:#ffcf80;">'+k+' — '+jupFound[k].d+'</div>'; }
+  document.getElementById('jupDiscList').innerHTML = html;
+  document.getElementById('jupEndSub').textContent = jupScore+' points · '+jupFoundCount+' molécules créées';
+  jupShow('jupEnd');
 }
 
 /* ===== FIN SECTION: MARS GAME LOGIC ===== */
