@@ -150,6 +150,13 @@ canvas{display:block;outline:none;}
 .hud-value{font-size:13px;color:#fff;letter-spacing:1px;}
 .hud-value.big{font-size:18px;color:#4dc4ff;font-weight:bold;}
 
+/* Barres de bouclier avant/arrière + jauge de répartition d'énergie */
+.shieldbar{height:8px;width:180px;background:rgba(0,0,0,0.5);border:1px solid rgba(77,196,255,0.3);border-radius:4px;overflow:hidden;margin-top:3px;}
+.shieldbar-fill{height:100%;width:100%;background:linear-gradient(90deg,#2aa86a,#4dc4ff);transition:width 0.2s;}
+.shieldbar-fill.rear{background:linear-gradient(90deg,#aa6622,#ffaa55);}
+.balbar{position:relative;height:6px;width:180px;background:rgba(0,0,0,0.5);border:1px solid rgba(77,196,255,0.3);border-radius:4px;margin-top:3px;}
+.balbar-knob{position:absolute;top:-3px;left:50%;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#4dc4ff;box-shadow:0 0 7px rgba(77,196,255,0.95);transition:left 0.1s;}
+
 /* Reticle (centre de l'écran) */
 .reticle{
   position:fixed;top:50%;left:50%;
@@ -902,16 +909,20 @@ canvas{display:block;outline:none;}
       <span class="control-key">SOURIS</span>
     </div>
     <div class="control-row">
-      <span>Tirer (armes requises)</span>
-      <span class="control-key">CLIC GAUCHE</span>
-    </div>
-    <div class="control-row">
-      <span>Zoom (viser / locker)</span>
-      <span class="control-key">CLIC DROIT</span>
-    </div>
-    <div class="control-row">
-      <span>Arme : laser / missile / rafale</span>
+      <span>Le vaisseau tire <strong>seul</strong> · posture : laser / missile / défense</span>
       <span><span class="control-key">1</span><span class="control-key">2</span><span class="control-key">3</span></span>
+    </div>
+    <div class="control-row">
+      <span>Cessez-le-feu (suspendre le tir)</span>
+      <span class="control-key">G</span>
+    </div>
+    <div class="control-row">
+      <span>Énergie bouclier : arrière / avant</span>
+      <span><span class="control-key">[</span><span class="control-key">]</span></span>
+    </div>
+    <div class="control-row">
+      <span>Zoom optique</span>
+      <span class="control-key">CLIC DROIT</span>
     </div>
     <div class="control-row">
       <span>Barrel roll</span>
@@ -952,10 +963,12 @@ canvas{display:block;outline:none;}
     <div class="hud-value" id="hudPos">0, 0, 0</div>
     <div class="hud-label" style="margin-top:6px;">VITESSE</div>
     <div class="hud-value big" id="hudSpeed">0 u/s</div>
-    <div class="hud-label" style="margin-top:8px;">BOUCLIER</div>
-    <div style="height:8px;width:180px;background:rgba(0,0,0,0.5);border:1px solid rgba(77,196,255,0.3);border-radius:4px;overflow:hidden;margin-top:3px;">
-      <div id="hudShieldFill" style="height:100%;width:100%;background:linear-gradient(90deg,#2aa86a,#4dc4ff);transition:width 0.2s;"></div>
-    </div>
+    <div class="hud-label" style="margin-top:8px;">BOUCLIER AVANT</div>
+    <div class="shieldbar"><div id="hudShieldFront" class="shieldbar-fill"></div></div>
+    <div class="hud-label" style="margin-top:4px;">BOUCLIER ARRIÈRE</div>
+    <div class="shieldbar"><div id="hudShieldRear" class="shieldbar-fill rear"></div></div>
+    <div class="hud-label" style="margin-top:5px;">ÉNERGIE BOUCLIER <span style="color:#5a8aaa;">arr.</span> <span style="float:right;color:#5a8aaa;">av.</span> <span style="color:#7aaadd;">[ ]</span></div>
+    <div class="balbar"><div id="hudBalance" class="balbar-knob"></div></div>
   </div>
 
   <div class="hud-corner hud-tr">
@@ -969,7 +982,7 @@ canvas{display:block;outline:none;}
 
   <div class="hud-corner hud-bl">
     <div>W/A/S/D = mouvement &nbsp; SPACE = haut &nbsp; SHIFT = bas</div>
-    <div>CTRL = boost &nbsp; CLIC GAUCHE = tir &nbsp; CLIC DROIT = zoom 🔭 &nbsp; 1·2·3 = arme</div>
+    <div>CTRL = boost &nbsp; 1·2·3 = posture (tir AUTO) &nbsp; G = cessez-le-feu &nbsp; [ ] = énergie bouclier &nbsp; CLIC DROIT = zoom 🔭</div>
     <div>Q/E = roll &nbsp; F = atterrir &nbsp; V = vue &nbsp; B = vaisseau &nbsp; X = mode vol</div>
   </div>
 </div>
@@ -1748,8 +1761,26 @@ let lastFireTime = 0;
 let mouseDown = false;
 let asteroidsDestroyed = 0; // compteur (pour score futur)
 
-// Bouclier + missiles
-let shield = 100; const SHIELD_MAX = 100; let shieldHitCd = 0; let shieldFlash = 0;
+// ── Boucliers AVANT / ARRIÈRE + répartition d'énergie (style Star Trek) ──
+const SHIELD_TOTAL = 200;        // énergie totale répartie entre les deux arcs
+let shieldBalance = 0.5;         // 0 = tout à l'arrière · 0.5 = équilibré · 1 = tout à l'avant ([ et ])
+let shieldFront = 100, shieldRear = 100;
+let shieldHitCd = 0; let shieldFlash = 0;
+const SHIELD_REGEN = 6;          // points/seconde régénérés par arc
+
+// Applique des dégâts à l'arc (avant ou arrière) qui fait face à la menace
+function damageShield(amount, threatPos){
+  const fwd = new THREE.Vector3(0,0,-1).applyQuaternion(ship.quaternion);
+  const toThreat = new THREE.Vector3().subVectors(threatPos, ship.position).normalize();
+  if(fwd.dot(toThreat) >= 0){               // menace devant → bouclier avant
+    shieldFront = Math.max(0, shieldFront - amount);
+    if(shieldFront <= 0) shieldRear = Math.max(0, shieldRear - amount*0.5); // débordement
+  } else {                                   // menace derrière → bouclier arrière
+    shieldRear = Math.max(0, shieldRear - amount);
+    if(shieldRear <= 0) shieldFront = Math.max(0, shieldFront - amount*0.5);
+  }
+  shieldFlash = 1.0;
+}
 let lastMissileTime = 0; const MISSILE_COOLDOWN = 0.9;
 // Ennemis (dogfight)
 let enemies = []; let enemyTemplate = null;
@@ -1864,6 +1895,78 @@ function fireSpread(){
   playFireSound();
 }
 
+/* ===== COMBAT AUTOMATIQUE — le vaisseau tire seul selon la posture (1=laser, 2=missile, 3=défense) ===== */
+let autoLaserCd = 0, autoMissileCd = 0, autoDefCd = 0;
+let ceaseFire = false; // touche G : suspendre le tir
+
+function nearestEnemy(maxRange){
+  let best = null, bd = maxRange;
+  for(const e of enemies){ if(!e.alive) continue;
+    const d = ship.position.distanceTo(e.obj.position); if(d < bd){ bd = d; best = e; } }
+  return best;
+}
+function nearestIncoming(maxRange){ // projectile/torpille ennemi le plus proche (pour la défense)
+  let best = null, bd = maxRange;
+  for(const p of projectiles){ if(!p.fromEnemy || p.life <= 0) continue;
+    const d = ship.position.distanceTo(p.mesh.position); if(d < bd){ bd = d; best = p; } }
+  return best;
+}
+function fireLaserAt(targetPos){
+  ship.updateMatrixWorld(true);
+  [new THREE.Vector3(-1.0,0,-0.5), new THREE.Vector3(1.0,0,-0.5)].forEach(off => {
+    const wp = off.clone().applyMatrix4(ship.matrixWorld);
+    const dir = new THREE.Vector3().subVectors(targetPos, wp).normalize();
+    const proj = createProjectileMesh();
+    proj.position.copy(wp);
+    proj.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir);
+    scene.add(proj);
+    projectiles.push({ mesh: proj, velocity: dir.clone().multiplyScalar(PROJECTILE_SPEED).add(shipVel), life: PROJECTILE_LIFETIME });
+  });
+  playFireSound();
+}
+function fireInterceptorAt(targetPos){ // tir rapide qui abat les menaces entrantes
+  ship.updateMatrixWorld(true);
+  const wp = new THREE.Vector3(0,0,-1.2).applyMatrix4(ship.matrixWorld);
+  const dir = new THREE.Vector3().subVectors(targetPos, wp).normalize();
+  const proj = createProjectileMesh();
+  if(proj.children[0]&&proj.children[0].material) proj.children[0].material.color.set(0x66ffcc);
+  if(proj.children[1]&&proj.children[1].material) proj.children[1].material.color.set(0x66ffcc);
+  proj.position.copy(wp);
+  proj.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir);
+  scene.add(proj);
+  projectiles.push({ mesh: proj, velocity: dir.clone().multiplyScalar(PROJECTILE_SPEED*1.3).add(shipVel), life: 1.4, interceptor: true });
+  playFireSound();
+}
+function fireHomingMissileAt(e){
+  ship.updateMatrixWorld(true);
+  const wp = new THREE.Vector3(0,0,-1.6).applyMatrix4(ship.matrixWorld);
+  const dir = new THREE.Vector3().subVectors(e.obj.position, wp).normalize();
+  const proj = createProjectileMesh(); proj.scale.set(2.4,2.4,2.4);
+  if(proj.children[0]&&proj.children[0].material) proj.children[0].material.color.set(0xffcc33);
+  if(proj.children[1]&&proj.children[1].material) proj.children[1].material.color.set(0xffaa22);
+  proj.position.copy(wp);
+  proj.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir);
+  scene.add(proj);
+  projectiles.push({ mesh: proj, velocity: dir.clone().multiplyScalar(340).add(shipVel), life: 4.0, isMissile:true, splash:9, target: e });
+  playFireSound();
+}
+function autoCombat(dt){
+  if(ceaseFire || !started || landed || !hasWeapons()) return;
+  autoLaserCd -= dt; autoMissileCd -= dt; autoDefCd -= dt;
+  if(currentWeapon === 2){          // MISSILE : torpilles à tête chercheuse + laser rapproché
+    if(autoMissileCd <= 0){ const e = nearestEnemy(900); if(e){ lockTarget = e; fireHomingMissileAt(e); autoMissileCd = 1.5; } }
+    if(autoLaserCd <= 0){ const e = nearestEnemy(220); if(e){ fireLaserAt(e.obj.position); autoLaserCd = 0.22; } }
+  } else if(currentWeapon === 3){   // DÉFENSE : abat les tirs/torpilles entrants en priorité
+    if(autoDefCd <= 0){
+      const inc = nearestIncoming(320);
+      if(inc){ fireInterceptorAt(inc.mesh.position); autoDefCd = 0.11; }
+      else { const e = nearestEnemy(300); if(e){ fireLaserAt(e.obj.position); autoDefCd = 0.18; } }
+    }
+  } else {                          // LASER : feu nourri sur l'ennemi le plus proche
+    if(autoLaserCd <= 0){ const e = nearestEnemy(650); if(e){ fireLaserAt(e.obj.position); autoLaserCd = 0.15; } }
+  }
+}
+
 // Détruit un astéroïde (le cache + spawn explosion)
 function destroyAsteroid(ast){
   if(!ast.alive) return;
@@ -1906,10 +2009,15 @@ function updateProjectilesAndExplosions(dt){
   // ── Projectiles ──
   for(let i = projectiles.length - 1; i >= 0; i--){
     const p = projectiles[i];
-    if(p.isMissile && p.target && p.target.alive){
-      const sp = p.velocity.length();
-      const des = new THREE.Vector3().subVectors(p.target.obj.position, p.mesh.position).normalize().multiplyScalar(sp);
-      p.velocity.lerp(des, Math.min(1, dt*3)); // missile à tête chercheuse
+    if(p.target){ // tête chercheuse : missiles joueur (cible = ennemi) ET torpilles ennemies (cible = vaisseau)
+      const tp = p.target.obj ? p.target.obj.position : p.target.position;
+      const talive = (p.target.alive === undefined) ? true : p.target.alive;
+      if(tp && talive){
+        const sp = p.velocity.length();
+        const turn = p.enemyMissile ? dt*1.5 : dt*3;  // torpilles ennemies tournent moins vite → esquivables
+        const des = new THREE.Vector3().subVectors(tp, p.mesh.position).normalize().multiplyScalar(sp);
+        p.velocity.lerp(des, Math.min(1, turn));
+      }
     }
     p.mesh.position.addScaledVector(p.velocity, dt);
     p.life -= dt;
@@ -1917,11 +2025,10 @@ function updateProjectilesAndExplosions(dt){
     let hit = false;
 
     if(p.fromEnemy){
-      // tir ennemi : touche le joueur ? -> baisse le bouclier
-      if(ship.position.distanceTo(p.mesh.position) < 3.0){
-        shield = Math.max(0, shield - 12);
+      // tir ennemi : touche le joueur ? -> baisse l'arc de bouclier concerné
+      if(ship.position.distanceTo(p.mesh.position) < 3.2){
+        damageShield(p.enemyMissile ? 26 : 12, p.mesh.position);
         shieldHitCd = 0.2;
-        shieldFlash = 1.0;
         hit = true;
       }
     } else {
@@ -1933,6 +2040,17 @@ function updateProjectilesAndExplosions(dt){
           spawnExplosion(p.mesh.position.x, p.mesh.position.y, p.mesh.position.z);
           if(e.hp <= 0) killEnemy(e);
           hit = true; break;
+        }
+      }
+      // tir d'interception (posture défense) : abat les tirs/torpilles ennemis
+      if(!hit && p.interceptor){
+        for(const q of projectiles){
+          if(!q.fromEnemy || q.life <= 0) continue;
+          if(q.mesh.position.distanceTo(p.mesh.position) < 6){
+            q.life = 0; // la menace est détruite (retirée au prochain frame)
+            spawnExplosion(p.mesh.position.x, p.mesh.position.y, p.mesh.position.z);
+            hit = true; break;
+          }
         }
       }
       // sinon : touche un astéroïde ?
@@ -2097,6 +2215,7 @@ document.addEventListener('keydown', (e) => {
   if(e.code === 'Digit1') currentWeapon = 1;
   if(e.code === 'Digit2') currentWeapon = 2;
   if(e.code === 'Digit3') currentWeapon = 3;
+  if(e.code === 'KeyG') ceaseFire = !ceaseFire;   // cessez-le-feu (le vaisseau arrête de tirer)
 });
 document.addEventListener('keyup', (e) => {
   keys[e.code] = false;
@@ -2208,8 +2327,11 @@ function updateHUD(){
   // Compteur astéroïdes détruits
   document.getElementById('hudDestroyed').textContent = asteroidsDestroyed;
 
-  const sf = document.getElementById('hudShieldFill');
-  if(sf) sf.style.width = shield + '%';
+  // Boucliers avant/arrière (charge / capacité courante) + jauge de répartition
+  const frontMax = SHIELD_TOTAL * shieldBalance, rearMax = SHIELD_TOTAL * (1 - shieldBalance);
+  const ff = document.getElementById('hudShieldFront'); if(ff) ff.style.width = (frontMax > 1 ? (shieldFront/frontMax*100) : 0).toFixed(0) + '%';
+  const fr = document.getElementById('hudShieldRear');  if(fr) fr.style.width  = (rearMax  > 1 ? (shieldRear /rearMax *100) : 0).toFixed(0) + '%';
+  const bk = document.getElementById('hudBalance');     if(bk) bk.style.left = (shieldBalance*100).toFixed(0) + '%';
 
   // ── Cadrans cockpit ──
   const cg = document.getElementById('cockpitGauges');
@@ -2218,9 +2340,10 @@ function updateHUD(){
   const spAng = -120 + Math.min(1, currentSpeed / 250) * 240;
   const nS = document.getElementById('needleSpeed'); if(nS) nS.setAttribute('transform', 'rotate(' + spAng.toFixed(1) + ' 50 50)');
   setText('dialSpeed', Math.round(currentSpeed));
-  const shAng = -120 + (shield / SHIELD_MAX) * 240;
+  const shTotal = shieldFront + shieldRear;
+  const shAng = -120 + (shTotal / SHIELD_TOTAL) * 240;
   const nSh = document.getElementById('needleShield'); if(nSh) nSh.setAttribute('transform', 'rotate(' + shAng.toFixed(1) + ' 50 50)');
-  setText('dialShield', Math.round(shield));
+  setText('dialShield', Math.round(shTotal));
 
   // ── Cible / ennemi ──
   let edist = null;
@@ -2253,8 +2376,8 @@ function updateHUD(){
   const ea = document.getElementById('enemyAlert');
   if(ea) ea.classList.toggle('show', edist !== null && edist < 600);
 
-  const wnames = {1:'LASER', 2:'MISSILE', 3:'RAFALE'};
-  setText('weaponInd', 'ARME : ' + (wnames[currentWeapon] || 'LASER') + '   [1·2·3]');
+  const wnames = {1:'LASER', 2:'MISSILE', 3:'DÉFENSE'};
+  setText('weaponInd', 'POSTURE : ' + (wnames[currentWeapon] || 'LASER') + (ceaseFire ? '  ✋ CESSEZ-LE-FEU' : '  ⚡ AUTO') + '   [1·2·3 · G]');
 
   // ── Marqueurs ennemis à l'écran (repérage à distance) ──
   for(let i=0;i<enemies.length;i++){
@@ -2490,7 +2613,7 @@ function prepEnemyScene(gltf){
   return m;
 }
 
-const ENEMY_COUNT = 3;
+const ENEMY_COUNT = 6;
 let lockTarget = null;
 
 function buildEnemyAt(e, pos){
@@ -2498,15 +2621,19 @@ function buildEnemyAt(e, pos){
   holder.add(enemyTemplate.clone(true));
   holder.position.copy(pos);
   scene.add(holder);
-  e.obj = holder; e.hp = 70; e.maxHp = 70; e.fireCd = 1 + Math.random(); e.alive = true; e.respawnCd = 0;
+  e.obj = holder; e.hp = 70; e.maxHp = 70;
+  e.fireCd = 0.6 + Math.random(); e.mslCd = 4 + Math.random()*4;
+  e.strafe = Math.random()<0.5 ? -1 : 1;
+  e.alive = true; e.respawnCd = 0;
 }
 
 function randomEnemyPos(){
   const a = Math.random()*Math.PI*2;
+  const r = 120 + Math.random()*160;   // distance d'apparition variée
   return new THREE.Vector3(
-    ship.position.x + Math.cos(a)*150,
-    ship.position.y + (Math.random()-0.5)*60,
-    ship.position.z + Math.sin(a)*150
+    ship.position.x + Math.cos(a)*r,
+    ship.position.y + (Math.random()-0.5)*80,
+    ship.position.z + Math.sin(a)*r
   );
 }
 
@@ -2532,13 +2659,26 @@ function enemyFire(e){
   projectiles.push({ mesh: proj, velocity: dir.multiplyScalar(450), life: 4.0, fromEnemy: true });
 }
 
+// Torpille ennemie : lente, à tête chercheuse, gros dégâts → à abattre en posture DÉFENSE
+function enemyFireMissile(e){
+  const o = e.obj;
+  const dir = new THREE.Vector3().subVectors(ship.position, o.position).normalize();
+  const proj = createProjectileMesh(); proj.scale.set(1.8,1.8,1.8);
+  if(proj.children[0]&&proj.children[0].material) proj.children[0].material.color.set(0xff5522);
+  if(proj.children[1]&&proj.children[1].material) proj.children[1].material.color.set(0xff3311);
+  proj.position.copy(o.position);
+  proj.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir);
+  scene.add(proj);
+  projectiles.push({ mesh: proj, velocity: dir.clone().multiplyScalar(150), life: 7.0, fromEnemy:true, enemyMissile:true, target: ship });
+}
+
 function killEnemy(e){
   if(!e.alive) return;
   e.alive = false;
   const p = e.obj.position;
   for(let k=0;k<4;k++) spawnExplosion(p.x+(Math.random()-0.5)*5, p.y+(Math.random()-0.5)*5, p.z+(Math.random()-0.5)*5);
   scene.remove(e.obj);
-  e.respawnCd = 6;
+  e.respawnCd = 4;   // reviennent plus vite (vagues continues)
 }
 
 function updateEnemies(dt){
@@ -2549,12 +2689,18 @@ function updateEnemies(dt){
     const to = new THREE.Vector3().subVectors(ship.position, o.position);
     const dist = to.length();
     const look = new THREE.Matrix4().lookAt(o.position, ship.position, new THREE.Vector3(0,1,0));
-    o.quaternion.slerp(new THREE.Quaternion().setFromRotationMatrix(look), Math.min(1, dt*2.2));
+    o.quaternion.slerp(new THREE.Quaternion().setFromRotationMatrix(look), Math.min(1, dt*2.8)); // tourne plus vite
     to.normalize();
-    if(dist > 55) o.position.addScaledVector(to, 30*dt);       // plus agressif/rapide
-    else if(dist < 32) o.position.addScaledVector(to, -18*dt);
+    if(dist > 70) o.position.addScaledVector(to, 55*dt);        // fonce vers le joueur (rapide)
+    else if(dist < 40) o.position.addScaledVector(to, -26*dt);  // garde ses distances
+    else {                                                       // harcèle en strafe latéral
+      const side = new THREE.Vector3(to.z, 0, -to.x);
+      o.position.addScaledVector(side, e.strafe * 24*dt);
+    }
     e.fireCd -= dt;
-    if(e.fireCd <= 0 && dist < 320){ enemyFire(e); e.fireCd = 1.1 + Math.random()*0.7; }
+    if(e.fireCd <= 0 && dist < 520){ enemyFire(e); e.fireCd = 0.7 + Math.random()*0.6; }   // tir plus fréquent + portée +
+    e.mslCd -= dt;
+    if(e.mslCd <= 0 && dist < 600 && dist > 60){ enemyFireMissile(e); e.mslCd = 6 + Math.random()*5; }
   }
 }
 
@@ -2710,38 +2856,46 @@ function animate(){
       shipVel.set(0, 0, 0);
     }
 
-    // ── TIR : clic gauche maintenu = arme sélectionnée (1/2/3) ──
-    if(mouseDown && hasWeapons()){
-      if(currentWeapon === 2) fireMissile();
-      else if(currentWeapon === 3) fireSpread();
-      else fireWeapon();
-    }
+    // ── COMBAT AUTOMATIQUE : le vaisseau tire seul selon la posture choisie (1/2/3) ──
+    autoCombat(dt);
   }
 
   // ── UPDATE projectiles et explosions ──
   updateProjectilesAndExplosions(dt);
 
-  // ── Bouclier : collision astéroïdes + régénération ──
+  // ── Boucliers avant/arrière : répartition d'énergie + collision + régénération ──
   if(started && !landed){
     shieldHitCd -= dt;
+
+    // Répartition de l'énergie : maintenir [ (vers l'arrière) ou ] (vers l'avant)
+    if(keys['BracketLeft'])  shieldBalance = Math.max(0.05, shieldBalance - 0.5*dt);
+    if(keys['BracketRight']) shieldBalance = Math.min(0.95, shieldBalance + 0.5*dt);
+    const frontMax = SHIELD_TOTAL * shieldBalance;
+    const rearMax  = SHIELD_TOTAL * (1 - shieldBalance);
+
+    // Collision astéroïdes → dégâts sur l'arc concerné
     for(const ast of asteroidData){
       if(!ast.alive) continue;
       const dx = ship.position.x-ast.x, dy = ship.position.y-ast.y, dz = ship.position.z-ast.z;
       const rr = ast.radius + 1.8;
       if(dx*dx+dy*dy+dz*dz < rr*rr && shieldHitCd <= 0){
-        shield = Math.max(0, shield - 18);
+        damageShield(18, new THREE.Vector3(ast.x, ast.y, ast.z));
         shieldHitCd = 0.4;
-        shieldFlash = 0.8;   // flash bouclier
         destroyAsteroid(ast);
         ship.position.add(new THREE.Vector3(dx,dy,dz).normalize().multiplyScalar(1.5));
         break;
       }
     }
-    if(shield < SHIELD_MAX) shield = Math.min(SHIELD_MAX, shield + 7*dt); // régénération
-    shieldFlash *= 0.90;                                                  // fade du flash
+
+    // Régénération de chaque arc, plafonnée à sa capacité courante
+    shieldFront = Math.min(frontMax, shieldFront + SHIELD_REGEN*dt);
+    shieldRear  = Math.min(rearMax,  shieldRear  + SHIELD_REGEN*dt);
+    shieldFront = Math.min(shieldFront, frontMax);  // si la capacité a baissé
+    shieldRear  = Math.min(shieldRear,  rearMax);
+
+    shieldFlash *= 0.90;                            // fade du flash
     if(shieldMesh && shieldMesh.material.uniforms){
-      // Bulle invisible au repos : on n'affiche qu'un bref flash quand on encaisse un coup
-      shieldMesh.material.uniforms.intensity.value = shieldFlash;
+      shieldMesh.material.uniforms.intensity.value = shieldFlash; // bulle visible seulement à l'impact
     }
   }
 
