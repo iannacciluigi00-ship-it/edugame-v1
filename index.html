@@ -909,8 +909,8 @@ canvas{display:block;outline:none;}
       <span class="control-key">SOURIS</span>
     </div>
     <div class="control-row">
-      <span>Le vaisseau tire <strong>seul</strong> · posture : laser / missile / défense</span>
-      <span><span class="control-key">1</span><span class="control-key">2</span><span class="control-key">3</span></span>
+      <span>Le vaisseau tire <strong>seul</strong> · laser / missile / défense / phaser</span>
+      <span><span class="control-key">1</span><span class="control-key">2</span><span class="control-key">3</span><span class="control-key">4</span></span>
     </div>
     <div class="control-row">
       <span>Cessez-le-feu (suspendre le tir)</span>
@@ -982,7 +982,7 @@ canvas{display:block;outline:none;}
 
   <div class="hud-corner hud-bl">
     <div>W/A/S/D = mouvement &nbsp; SPACE = haut &nbsp; SHIFT = bas</div>
-    <div>CTRL = boost &nbsp; 1·2·3 = posture (tir AUTO) &nbsp; G = cessez-le-feu &nbsp; [ ] = énergie bouclier &nbsp; CLIC DROIT = zoom 🔭</div>
+    <div>CTRL = boost &nbsp; 1·2·3·4 = posture (tir AUTO) &nbsp; G = cessez-le-feu &nbsp; [ ] = énergie bouclier &nbsp; CLIC DROIT = zoom 🔭</div>
     <div>Q/E = roll &nbsp; F = atterrir &nbsp; V = vue &nbsp; B = vaisseau &nbsp; X = mode vol</div>
   </div>
 </div>
@@ -1643,18 +1643,56 @@ function makeEngine(x){
 const engineL = makeEngine(-0.7);
 const engineR = makeEngine(0.7);
 
+// Vaisseau « Enterprise » : soucoupe + coque + 2 nacelles warp (style Star Trek)
+function createEnterpriseShip(){
+  const g = new THREE.Group();
+  // Matériaux mats et plus sombres → ne débordent pas avec le bloom, silhouette nette
+  const hull   = new THREE.MeshStandardMaterial({ color:0x6f7c8c, roughness:0.7, metalness:0.25 });
+  const accent = new THREE.MeshStandardMaterial({ color:0x495766, roughness:0.75, metalness:0.2 });
+  const blue   = new THREE.MeshBasicMaterial({ color:0x2f6fb4, toneMapped:false }); // grille warp (lueur douce)
+  const red    = new THREE.MeshBasicMaterial({ color:0xb33218, toneMapped:false }); // bussard
+  const defl   = new THREE.MeshBasicMaterial({ color:0xb87a2e, toneMapped:false }); // déflecteur
+  // Soucoupe (disque plat à l'avant = -Z)
+  const saucer = new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,0.26,40), hull); saucer.position.set(0,0.18,-1.15); g.add(saucer);
+  const sBot = new THREE.Mesh(new THREE.ConeGeometry(1.5,0.45,40), hull); sBot.position.set(0,-0.02,-1.15); sBot.rotation.x=Math.PI; g.add(sBot);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.5,24,14,0,Math.PI*2,0,Math.PI/2), hull); dome.position.set(0,0.31,-1.15); g.add(dome);
+  // Cou + coque d'ingénierie
+  const neck = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.55,1.0), accent); neck.position.set(0,-0.05,-0.35); neck.rotation.x=0.35; g.add(neck);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.30,2.0,20), hull); body.rotation.x=Math.PI/2; body.position.set(0,-0.28,0.45); g.add(body);
+  const dish = new THREE.Mesh(new THREE.CircleGeometry(0.26,20), defl); dish.position.set(0,-0.28,-0.56); g.add(dish);
+  // Nacelles warp (2) + pylônes + bussard rouge + grille bleue
+  [-1,1].forEach(side => {
+    const pyl = new THREE.Mesh(new THREE.BoxGeometry(0.14,0.7,0.55), accent); pyl.position.set(side*0.55,0.05,0.85); pyl.rotation.z=side*0.5; g.add(pyl);
+    const nac = new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.20,1.9,16), hull); nac.rotation.x=Math.PI/2; nac.position.set(side*1.05,0.30,0.7); g.add(nac);
+    const buss = new THREE.Mesh(new THREE.SphereGeometry(0.21,14,10), red); buss.position.set(side*1.05,0.30,-0.24); g.add(buss);
+    const warp = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.12,1.5), blue); warp.position.set(side*0.87,0.30,0.7); g.add(warp);
+  });
+  const np = new THREE.PointLight(0x66aaff,0.25,7); np.position.set(0,0.3,0.7); g.add(np);
+  g.scale.setScalar(0.82);
+  return g;
+}
+
 let shipMesh = createShipMesh();
 ship.add(shipMesh);
 shipMesh.visible = false; // caché par défaut (vue cockpit = on est dedans)
 
-// ── Vaisseaux 3D interchangeables (touche B pour changer) ──
-const SHIP_FILES = ['ship1.glb','ship2.glb','ship3.glb','ship4.glb','ship5.glb','ship6.glb'];
+// ── Vaisseaux interchangeables (touche B) — l'Enterprise est le vaisseau par défaut ──
+const SHIP_FILES = ['enterprise','ship1.glb','ship2.glb','ship3.glb','ship4.glb','ship5.glb','ship6.glb'];
 let shipIndex = 0;
 let _gltf = null;
 try { if (typeof THREE.GLTFLoader !== 'undefined') _gltf = new THREE.GLTFLoader(); }
 catch(e){ console.warn('GLTFLoader indispo', e); }
 
 function loadShip(i){
+  if(SHIP_FILES[i] === 'enterprise'){       // vaisseau procédural style Star Trek
+    const wasVisible = shipMesh.visible;
+    ship.remove(shipMesh);
+    shipMesh = createEnterpriseShip();
+    ship.add(shipMesh);
+    shipMesh.visible = wasVisible;
+    console.log('Vaisseau: Enterprise');
+    return;
+  }
   if(!_gltf) return;
   _gltf.load(SHIP_FILES[i], function(gltf){
     const model = gltf.scene;
@@ -1899,6 +1937,25 @@ function fireSpread(){
 let autoLaserCd = 0, autoMissileCd = 0, autoDefCd = 0;
 let ceaseFire = false; // touche G : suspendre le tir
 
+// Phaser à faisceau continu (posture 4) : un rayon orangé qui inflige des dégâts en continu
+const PHASER_DPS = 55;
+const phaserBeam = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.09, 0.09, 1, 8),
+  new THREE.MeshBasicMaterial({ color: 0xff2222, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending, toneMapped:false, depthWrite:false })
+);
+phaserBeam.visible = false;
+scene.add(phaserBeam);
+function updatePhaserBeam(targetPos){
+  ship.updateMatrixWorld(true);
+  const muzzle = new THREE.Vector3(0,0,-1.6).applyMatrix4(ship.matrixWorld);
+  const dir = new THREE.Vector3().subVectors(targetPos, muzzle);
+  const dist = dir.length(); dir.normalize();
+  phaserBeam.position.copy(muzzle).addScaledVector(dir, dist*0.5);
+  phaserBeam.scale.set(1, dist, 1);
+  phaserBeam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+  phaserBeam.visible = true;
+}
+
 function nearestEnemy(maxRange){
   let best = null, bd = maxRange;
   for(const e of enemies){ if(!e.alive) continue;
@@ -1951,9 +2008,21 @@ function fireHomingMissileAt(e){
   playFireSound();
 }
 function autoCombat(dt){
+  // Faisceau phaser : l'éteindre dès qu'on ne doit pas tirer en posture 4
+  const phaserActive = !ceaseFire && started && !landed && hasWeapons() && currentWeapon === 4;
+  if(!phaserActive){ phaserBeam.visible = false; stopPhaserSound(); }
+
   if(ceaseFire || !started || landed || !hasWeapons()) return;
   autoLaserCd -= dt; autoMissileCd -= dt; autoDefCd -= dt;
-  if(currentWeapon === 2){          // MISSILE : torpilles à tête chercheuse + laser rapproché
+  if(currentWeapon === 4){          // PHASER : faisceau continu sur l'ennemi le plus proche
+    const e = nearestEnemy(700);
+    if(e){
+      updatePhaserBeam(e.obj.position);
+      startPhaserSound();
+      e.hp -= PHASER_DPS * dt;
+      if(e.hp <= 0){ phaserBeam.visible = false; stopPhaserSound(); killEnemy(e); }
+    } else { phaserBeam.visible = false; stopPhaserSound(); }
+  } else if(currentWeapon === 2){   // MISSILE : torpilles à tête chercheuse + laser rapproché
     if(autoMissileCd <= 0){ const e = nearestEnemy(900); if(e){ lockTarget = e; fireHomingMissileAt(e); autoMissileCd = 1.5; } }
     if(autoLaserCd <= 0){ const e = nearestEnemy(220); if(e){ fireLaserAt(e.obj.position); autoLaserCd = 0.22; } }
   } else if(currentWeapon === 3){   // DÉFENSE : abat les tirs/torpilles entrants en priorité
@@ -2005,7 +2074,39 @@ function spawnExplosion(x, y, z){
 }
 
 // Mise à jour des projectiles et explosions (appelée chaque frame)
+// ── Traînées des missiles/torpilles (pour bien les repérer et les voir arriver) ──
+const trails = [];
+let _trailTex = null;
+function trailTexture(){
+  if(_trailTex) return _trailTex;
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(16,16,0,16,16,16);
+  grd.addColorStop(0,'rgba(255,255,255,1)');
+  grd.addColorStop(0.4,'rgba(255,255,255,0.45)');
+  grd.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0,0,32,32);
+  _trailTex = new THREE.CanvasTexture(c);
+  return _trailTex;
+}
+function spawnTrail(pos, color, size){
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: trailTexture(), color, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false }));
+  spr.position.copy(pos); spr.scale.setScalar(size);
+  scene.add(spr);
+  trails.push({ mesh: spr, life: 1.0, size });
+}
+function updateTrails(dt){
+  for(let i = trails.length - 1; i >= 0; i--){
+    const tr = trails[i];
+    tr.life -= dt * 2.6;                       // s'efface en ~0.38s
+    if(tr.life <= 0){ scene.remove(tr.mesh); trails.splice(i,1); continue; }
+    tr.mesh.material.opacity = tr.life * 0.85;
+    tr.mesh.scale.setScalar(tr.size * (0.4 + tr.life*0.8));
+  }
+}
+
 function updateProjectilesAndExplosions(dt){
+  updateTrails(dt);
   // ── Projectiles ──
   for(let i = projectiles.length - 1; i >= 0; i--){
     const p = projectiles[i];
@@ -2014,13 +2115,18 @@ function updateProjectilesAndExplosions(dt){
       const talive = (p.target.alive === undefined) ? true : p.target.alive;
       if(tp && talive){
         const sp = p.velocity.length();
-        const turn = p.enemyMissile ? dt*1.5 : dt*3;  // torpilles ennemies tournent moins vite → esquivables
+        const turn = p.enemyMissile ? dt*0.8 : dt*3;  // torpilles ennemies : virage lent → esquivables au pilotage
         const des = new THREE.Vector3().subVectors(tp, p.mesh.position).normalize().multiplyScalar(sp);
         p.velocity.lerp(des, Math.min(1, turn));
       }
     }
     p.mesh.position.addScaledVector(p.velocity, dt);
     p.life -= dt;
+
+    // Traînée lumineuse derrière les missiles/torpilles
+    if(p.isMissile || p.enemyMissile){
+      spawnTrail(p.mesh.position, p.enemyMissile ? 0xff4422 : 0xffcc55, p.enemyMissile ? 2.8 : 2.2);
+    }
 
     let hit = false;
 
@@ -2113,23 +2219,56 @@ function getAudioContext(){
   return audioCtx;
 }
 
+// Pew laser ADOUCI : triangle filtré, volume bas, throttlé pour ne pas spammer l'oreille
+let _lastPew = 0;
 function playFireSound(){
   const ctx = getAudioContext();
   if(!ctx) return;
   const t = ctx.currentTime;
+  if(t - _lastPew < 0.07) return;   // throttle : max ~14 pews/s même si le tir est rapide
+  _lastPew = t;
 
-  // Sweep de fréquence vers le bas (pew!)
   const osc = ctx.createOscillator();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(900, t);
-  osc.frequency.exponentialRampToValueAtTime(150, t + 0.12);
+  osc.type = 'triangle';                                   // bien plus doux que la dent de scie
+  osc.frequency.setValueAtTime(560, t);
+  osc.frequency.exponentialRampToValueAtTime(300, t + 0.08);
+
+  const bp = ctx.createBiquadFilter();                     // adoucit les aigus agressants
+  bp.type = 'lowpass'; bp.frequency.value = 1400;
 
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.08, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  gain.gain.setValueAtTime(0.0, t);
+  gain.gain.linearRampToValueAtTime(0.03, t + 0.008);      // volume réduit (0.03 au lieu de 0.08)
+  gain.gain.exponentialRampToValueAtTime(0.0008, t + 0.11);
 
-  osc.connect(gain); gain.connect(ctx.destination);
-  osc.start(t); osc.stop(t + 0.16);
+  osc.connect(bp); bp.connect(gain); gain.connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.12);
+}
+
+// ── Phaser à faisceau continu (Star Trek) : un bourdonnement lissé, démarre/s'arrête ──
+let phaserOsc = null, phaserGain = null, phaserLfo = null;
+function startPhaserSound(){
+  const ctx = getAudioContext();
+  if(!ctx || phaserOsc) return;
+  const t = ctx.currentTime;
+  phaserOsc = ctx.createOscillator(); phaserOsc.type = 'sawtooth'; phaserOsc.frequency.value = 200;
+  phaserLfo = ctx.createOscillator(); phaserLfo.type = 'sine'; phaserLfo.frequency.value = 8; // léger warble
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 14;
+  phaserLfo.connect(lfoGain); lfoGain.connect(phaserOsc.frequency);
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 520; bp.Q.value = 1.6;
+  phaserGain = ctx.createGain(); phaserGain.gain.setValueAtTime(0.0, t);
+  phaserGain.gain.linearRampToValueAtTime(0.045, t + 0.05);
+  phaserOsc.connect(bp); bp.connect(phaserGain); phaserGain.connect(ctx.destination);
+  phaserOsc.start(t); phaserLfo.start(t);
+}
+function stopPhaserSound(){
+  if(!phaserOsc) return;
+  const ctx = getAudioContext(); const t = ctx.currentTime;
+  phaserGain.gain.cancelScheduledValues(t);
+  phaserGain.gain.setValueAtTime(phaserGain.gain.value, t);
+  phaserGain.gain.linearRampToValueAtTime(0.0, t + 0.05);
+  phaserOsc.stop(t + 0.07); phaserLfo.stop(t + 0.07);
+  phaserOsc = null; phaserGain = null; phaserLfo = null;
 }
 
 function playExplosionSound(){
@@ -2215,6 +2354,7 @@ document.addEventListener('keydown', (e) => {
   if(e.code === 'Digit1') currentWeapon = 1;
   if(e.code === 'Digit2') currentWeapon = 2;
   if(e.code === 'Digit3') currentWeapon = 3;
+  if(e.code === 'Digit4') currentWeapon = 4;       // phaser à faisceau continu
   if(e.code === 'KeyG') ceaseFire = !ceaseFire;   // cessez-le-feu (le vaisseau arrête de tirer)
 });
 document.addEventListener('keyup', (e) => {
@@ -2376,8 +2516,8 @@ function updateHUD(){
   const ea = document.getElementById('enemyAlert');
   if(ea) ea.classList.toggle('show', edist !== null && edist < 600);
 
-  const wnames = {1:'LASER', 2:'MISSILE', 3:'DÉFENSE'};
-  setText('weaponInd', 'POSTURE : ' + (wnames[currentWeapon] || 'LASER') + (ceaseFire ? '  ✋ CESSEZ-LE-FEU' : '  ⚡ AUTO') + '   [1·2·3 · G]');
+  const wnames = {1:'LASER', 2:'MISSILE', 3:'DÉFENSE', 4:'PHASER'};
+  setText('weaponInd', 'POSTURE : ' + (wnames[currentWeapon] || 'LASER') + (ceaseFire ? '  ✋ CESSEZ-LE-FEU' : '  ⚡ AUTO') + '   [1·2·3·4 · G]');
 
   // ── Marqueurs ennemis à l'écran (repérage à distance) ──
   for(let i=0;i<enemies.length;i++){
@@ -2669,7 +2809,7 @@ function enemyFireMissile(e){
   proj.position.copy(o.position);
   proj.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1), dir);
   scene.add(proj);
-  projectiles.push({ mesh: proj, velocity: dir.clone().multiplyScalar(150), life: 7.0, fromEnemy:true, enemyMissile:true, target: ship });
+  projectiles.push({ mesh: proj, velocity: dir.clone().multiplyScalar(190), life: 7.0, fromEnemy:true, enemyMissile:true, target: ship });
 }
 
 function killEnemy(e){
